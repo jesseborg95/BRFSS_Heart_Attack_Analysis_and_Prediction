@@ -1,0 +1,172 @@
+---
+title: "Exploring the BRFSS data"
+output: 
+  html_document: 
+    fig_height: 4
+    highlight: pygments
+    theme: spacelab
+---
+
+## Setup
+
+### Load packages
+
+```{r load-packages, message = FALSE}
+library(ggplot2)
+library(dplyr)
+```
+
+### Load data
+
+```{r load-data}
+load("brfss2013.RData")
+```
+
+* * *
+
+## Part 1: Data
+
+For this observational assignment, I used the Behavior Risk Factor Surveillance System (BRFSS) data from the 2013 survey. This data is collected by the CDC from all 50 states via landline phone and cellular phone covering a variety of health related topics. Generalizability is limited to those in the population with access to a landline or cell phone as well as to those living in a private residence or college housing. These factors leave out individuals and households who fall outside of these conditions, which means that random sampling is not fully taking place. Sampling bias occurs in the form of non-response, indicated by the NA/null points that exist in the dataset. My goal with researching these questions is to research trends in the relationships between different variables, without assuming causality beforehand.
+
+* * *
+
+## Part 2: Research questions
+
+**Research quesion 1:**
+The ostrich effect is a phenomenon where individuals tend to ignore unpleasant information by ignoring it. My first research question involves evaluating the behavior of people told that they have high cholesterol, (`toldhi2`) across different age brackets (`X_ageg5yr`) to see what the ratio of those individuals is who had their cholesterol level checked recently vs not recently (`cholchk`). Once exposed to the negative information of being told they have high cholesterol, is there a pattern in their likeliness to check their cholesterol level frequently across age brackets?
+  
+**Research quesion 2:**
+A popular saying is that money can't buy you happiness, but could it contribute to an individual's health? In my second research question, I will evaluate the average number of unhealthy days reported (`poorhlth`) by income level bracket (`income2`).
+
+**Research quesion 3:**
+Binge drinking has been linked to depressive disorders, particularly among females. I'm curious if there is a relationship between binge drinking (`drnk3ge5`) and mental health (`menthlth`) across age brackets (`X_age_g`) and between genders (`sex`). 
+
+* * *
+
+## Part 3: Exploratory data analysis
+
+**Research quesion 1:**
+Evidence for ostrige effect - is an individual with high cholesterol likely to check less frequently and is there a pattern across age segment?
+
+First, I preview the data to use: individuals told that they had high cholesterol, the last time they had their cholesterol level checked, and the age bracket.
+```{r}
+brfss2013 %>% 
+  select(toldhi2, cholchk, X_ageg5yr) %>%
+  str()
+```
+
+Next, I am interested in the summary stats of count of the population across age brackets. I limit the summary to individuals told that they have high cholesterol.
+```{r}
+brfss2013 %>% 
+  filter(toldhi2 != "No") %>%
+  group_by(X_ageg5yr, cholchk) %>% 
+  summarise(count = n())
+```
+
+
+Next, I create a new variable `cholchkrecent` to indicate whether an individual has gotten their cholesterol checked in the past year within the past year (which would qualify as recent), or greater than a year ago (which would be not recent).
+```{r}
+brfss2013 <- brfss2013 %>%
+  mutate(cholchkrecent = ifelse(cholchk == "Within past year", "Recent", "Not Recent"))
+  
+brfss2013 <- brfss2013 %>%
+  mutate(cholchkrecent_yes = ifelse(cholchkrecent == "Recent", 1, 0))
+  
+brfss2013 <- brfss2013 %>%
+  mutate(cholchkrecent_no = ifelse(cholchkrecent == "Not Recent", 1, 0))
+```
+
+I then compare the count of recent vs not recent among `Cholchkrecent`
+```{r}
+brfss2013 %>% 
+  filter(toldhi2 != "No") %>%
+  group_by(X_ageg5yr, cholchkrecent) %>% 
+  summarise(count = n())
+```
+
+Lastly, I calculate the ratio of Recent vs. Not recent as well as the percentage of those who had gotten checked recently out of the population of those told they have high cholesterol by age bracket.
+```{r}
+T_cholchkrecent <- brfss2013 %>%
+  filter(toldhi2 != "No", !is.na(cholchk), !is.na(X_ageg5yr)) %>%
+  group_by(X_ageg5yr) %>% 
+  summarise(cholchkratio = sum(cholchkrecent_yes) / sum(cholchkrecent_no), cholchkpercent = sum(cholchkrecent_yes) / (sum(cholchkrecent_no) + sum(cholchkrecent_yes)), cholchkcount = n())
+```
+
+Based on these graphs, there appears to be a trend in the relationship between ratio (and percentage) of individuals with high blood pressure getting checked regularly based n age bracket. Relatively younger people tend to not check as frequently even if they have been told they have high cholesterol. The ratio increases steadily until a larger jump after 65, while the percentage increases steadily overall until 70. This could be related to the large jumps in the number of individuals being told that they have high cholesterol but would require further research. It's interesting to observe the slight decrease in the percentage and ratio of those who have checked recently in the 80 or older bracket. 
+```{r}
+#ratio of those checked
+ggplot(data = T_cholchkrecent, aes(x = X_ageg5yr, y = cholchkratio)) +
+       geom_point() +
+       theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+#percent of those checked
+ggplot(data = T_cholchkrecent, aes(x = X_ageg5yr, y = cholchkpercent)) +
+       geom_point() +
+       theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+T_cholchkrecent %>%
+  group_by(X_ageg5yr) %>%
+  summarise(cholchkratio, cholchkpercent, cholchkcount)
+
+```
+
+
+
+**Research quesion 2:**
+Is there a pattern between income level and number of unhealthy days reported?
+
+First, I preview the data I will use: household income and number of unhealthy days reported.
+```{r}
+brfss2013 %>% 
+  select(income2, poorhlth) %>%
+  str()
+```
+
+Then I calculate the average number of poor health days reported across income brackets in a new variable `avgpoorhlth`
+```{r}
+T_Income_Health <- brfss2013 %>%
+  filter(!is.na(poorhlth), !is.na(income2)) %>%
+  group_by(income2) %>%
+  summarise(avgpoorhlth = mean(poorhlth))
+```
+
+There appears to be a negative relationship between higher income levels and the average number of unhealthy days reported. We are currently unaware if one influences the other and/or if there are other variables involved that contribute to either, which could be an area of further study.
+```{r}
+ggplot(data = T_Income_Health, aes(x = income2, y = avgpoorhlth, fill = income2)) +
+  geom_bar(stat = "identity") +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+```
+
+
+
+**Research quesion 3:**
+Is there a relationship between binge drinking and the number of poor mental health days reported across age brackets and between genders?
+
+First, I will preview the data to use: days of poor mental health reported, number of days of binge drinking reported, gender, and age bracket.
+```{r}
+brfss2013 %>% 
+  select(menthlth, drnk3ge5, sex, X_age_g) %>%
+  str()
+```
+
+Then I will clean my data by filtering out NA values and only looking at individuals where binge drinking has been reported.
+```{r}
+T_Drinking <- brfss2013 %>% 
+  filter(!is.na(menthlth), !is.na(drnk3ge5), drnk3ge5 > 0, !is.na(sex), !is.na(X_age_g)) %>%
+  group_by(X_age_g, sex) %>%
+  select(X_age_g, sex, drnk3ge5, menthlth)
+```
+
+I want to view some summary statistics on the average of mean number of days of binge drinking and mean number of poor mental health days reported.
+```{r}
+T_Drinking_STATS <- T_Drinking %>%
+  group_by(X_age_g, sex) %>%
+  summarise(meanbinge = mean(drnk3ge5), meanmenthlth = mean(menthlth), populationbinge = n())
+```
+
+Despite having a lower average of binge drinking days across all age brackets, women have reported far more days of poor mental health. Among binge drinkers, the number of binge drinking days do not seem to have a positive relationship with mental health where gender is concerned. This does not compare the mental health of binge drinkers vs non binge drinkerss.
+```{r}
+ggplot(data = T_Drinking_STATS, aes(x = meanmenthlth, y = meanbinge, color = sex)) +
+  geom_point()
+```
