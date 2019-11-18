@@ -34,4 +34,13 @@ library(corrplot)
 library(car)
 ```
 
+```{r load-data}
+load("brfss2013.RData")
+```
+
+```{r check for NAs}
+missing_vals <- colSums(is.na(brfss2013))
+missing_vals
+```
+
 
