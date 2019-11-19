@@ -3,10 +3,7 @@ title: "DATS6101 Group Project: Predicting Strokes"
 author: "Jonathan Giguere, Jesse Borg, Ese Emuraye, Sarah Gates"
 date: "October 30th 2019"
 output: 
-   html_document: 
-    toc: yes
-    toc_depth: 3
-    toc_float: yes
+   html_document:
 ---
 
 ```{r setup, include=FALSE}
@@ -22,25 +19,110 @@ knitr::opts_chunk$set(error = FALSE)
 loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.packages(x,dep=T,repos="http://cran.us.r-project.org"); if(!require(x,character.only=T)) stop("Package not found") } }
 ```
 
-```{r, packages, include = F}
-library(magrittr)
-library(corrplot)
-library(ggplot2)
-library(plyr)
-library(dplyr)
-library(viridis)
-library(viridisLite)
-library(corrplot)
-library(car)
+### Load packages
+
+```{r load-packages, message = FALSE}
+loadPkg('ggplot2')
+loadPkg('dplyr')
+loadPkg('plyr')
 ```
+
+### Load data
 
 ```{r load-data}
 load("brfss2013.RData")
 ```
 
-```{r check for NAs}
-missing_vals <- colSums(is.na(brfss2013))
-missing_vals
+```{r keeps}
+keeps <- c('X_state', 'imonth', 'genhlth', 'menthlth', 'hlthpln1', 'sleptim1', 'bphigh4', 'bpmeds', 'cholchk', 'cvdinfr4', 'cvdcrhd4', 'cvdstrk3', 'asthma3', 'asthnow', 'addepev2', 'chckidny', 'diabete3', 'veteran3', 'marital', 'educa', 'employ1', 'income2', 'weight2', 'sex', 'pregnant', 'diffwalk', 'smoke100', 'smokday2', 'stopsmk2', 'usenow3', 'alcday5', 'avedrnk2', 'drnk3ge5', 'fruit1', 'fvgreen', 'exerany2', 'prediab1', 'qlmentl2', 'qlstres2', 'drvisits', 'ssbsugar', 'cvdasprn', 'scntwrk1')
+
+brfss_reduced <- brfss2013[keeps]
 ```
 
+```{r keeps}
+new_names <- c('state', 'month', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'bp_meds', 'time_since_cholcheck', 'heart_attack', 'angina', 'stroke', 'asthma', 'has_asthma_now', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'pregnant', 'difficulty_walk', 'smoke_100', 'freq_smoke', 'stop_smoke_year', 'smokeless_tabac', 'alc_past_30', 'alc_perday_30', 'binge_alc', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'prediabetes', 'depressed_30', 'anxious_30', 'dr_visits_year', 'soda_freq', 'aspirin_daily', 'work_hours_week')
 
+names(brfss_reduced) <- new_names
+```
+
+```{r check for NAs}
+missing_vals <- colSums(is.na(brfss_reduced))
+sort(missing_vals)
+```
+
+```{r}
+brfss_reduced_drops <- subset(brfss_reduced, select = -c(dr_visits_year, prediabetes, binge_alc, alc_perday_30, freq_smoke, bp_meds, aspirin_daily, soda_freq, pregnant, stop_smoke_year, has_asthma_now, work_hours_week, depressed_30, anxious_30))
+```
+
+```{r}
+brfss_complete <- na.omit(brfss_reduced_drops)
+```
+
+```{r}
+str(brfss_complete)
+```
+
+```{r}
+levels(brfss_complete$high_bp)
+levels(brfss_complete$employment_status)
+levels(brfss_complete$smokeless_tabac)
+levels(brfss_complete$diabetes)
+```
+
+```{r}
+levels(brfss_complete$health_coverage)[levels(brfss_complete$health_coverage) == 'Yes'] <- 1
+levels(brfss_complete$health_coverage)[levels(brfss_complete$health_coverage) == 'No'] <- 0
+
+levels(brfss_complete$heart_attack)[levels(brfss_complete$heart_attack) == 'Yes'] <- 1
+levels(brfss_complete$heart_attack)[levels(brfss_complete$heart_attack) == 'No'] <- 0
+
+levels(brfss_complete$angina)[levels(brfss_complete$angina) == 'Yes'] <- 1
+levels(brfss_complete$angina)[levels(brfss_complete$angina) == 'No'] <- 0
+
+levels(brfss_complete$stroke)[levels(brfss_complete$stroke) == 'Yes'] <- 1
+levels(brfss_complete$stroke)[levels(brfss_complete$stroke) == 'No'] <- 0
+
+levels(brfss_complete$asthma)[levels(brfss_complete$asthma) == 'Yes'] <- 1
+levels(brfss_complete$asthma)[levels(brfss_complete$asthma) == 'No'] <- 0
+
+levels(brfss_complete$depression)[levels(brfss_complete$depression) == 'Yes'] <- 1
+levels(brfss_complete$depression)[levels(brfss_complete$depression) == 'No'] <- 0
+
+levels(brfss_complete$kidney_disease)[levels(brfss_complete$kidney_disease) == 'Yes'] <- 1
+levels(brfss_complete$kidney_disease)[levels(brfss_complete$kidney_disease) == 'No'] <- 0
+
+levels(brfss_complete$veteran)[levels(brfss_complete$veteran) == 'Yes'] <- 1
+levels(brfss_complete$veteran)[levels(brfss_complete$veteran) == 'No'] <- 0
+
+levels(brfss_complete$difficulty_walk)[levels(brfss_complete$difficulty_walk) == 'Yes'] <- 1
+levels(brfss_complete$difficulty_walk)[levels(brfss_complete$difficulty_walk) == 'No'] <- 0
+
+levels(brfss_complete$smoke_100)[levels(brfss_complete$smoke_100) == 'Yes'] <- 1
+levels(brfss_complete$smoke_100)[levels(brfss_complete$smoke_100) == 'No'] <- 0
+
+levels(brfss_complete$exercise_30)[levels(brfss_complete$exercise_30) == 'Yes'] <- 1
+levels(brfss_complete$exercise_30)[levels(brfss_complete$exercise_30) == 'No'] <- 0
+
+levels(brfss_complete$diabetes)[levels(brfss_complete$diabetes) == "Yes, but female told only during pregnancy"] <- 1
+levels(brfss_complete$diabetes)[levels(brfss_complete$diabetes) == "No, pre-diabetes or borderline diabetes"  ] <- 0
+levels(brfss_complete$diabetes)[levels(brfss_complete$diabetes) == 'Yes'] <- 1
+levels(brfss_complete$diabetes)[levels(brfss_complete$diabetes) == 'No'] <- 0
+
+levels(brfss_complete$high_bp)[levels(brfss_complete$high_bp) == "Yes, but female told only during pregnancy"] <- 1
+levels(brfss_complete$high_bp)[levels(brfss_complete$high_bp) == "Told borderline or pre-hypertensive" ] <- 1
+levels(brfss_complete$high_bp)[levels(brfss_complete$high_bp) == 'Yes'] <- 1
+levels(brfss_complete$high_bp)[levels(brfss_complete$high_bp) == 'No'] <- 0
+
+levels(brfss_complete$employment_status)[levels(brfss_complete$employment_status) == "Employed for wages" ] <- 'Employed'
+levels(brfss_complete$employment_status)[levels(brfss_complete$employment_status) == "Out of work for 1 year or more" ] <- 'Unemployed'
+levels(brfss_complete$employment_status)[levels(brfss_complete$employment_status) == "Out of work for less than 1 year" ] <- 'Unemployed'
+
+levels(brfss_complete$smokeless_tabac)[levels(brfss_complete$smokeless_tabac) == "Every day" ] <- 1
+levels(brfss_complete$smokeless_tabac)[levels(brfss_complete$smokeless_tabac) == "Some days" ] <- 1
+levels(brfss_complete$smokeless_tabac)[levels(brfss_complete$smokeless_tabac) == "Not at all" ] <- 0
+
+```
+
+```{r}
+str(brfss_complete)
+```
