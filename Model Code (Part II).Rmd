@@ -1,7 +1,7 @@
 ---
 title: "DATS6101 Group Project: Predicting Strokes"
 author: "Jonathan Giguere, Jesse Borg, Ese Emuraye, Sarah Gates"
-date: "October 30th 2019"
+date: "December 11th 2019"
 output: 
    html_document:
 ---
@@ -33,43 +33,64 @@ loadPkg('plyr')
 load("brfss2013.RData")
 ```
 
+### Cleaning the data
+
 ```{r keeps}
+# Choose which variables we want to keep
+
 keeps <- c('X_state', 'imonth', 'genhlth', 'menthlth', 'hlthpln1', 'sleptim1', 'bphigh4', 'bpmeds', 'cholchk', 'cvdinfr4', 'cvdcrhd4', 'cvdstrk3', 'asthma3', 'asthnow', 'addepev2', 'chckidny', 'diabete3', 'veteran3', 'marital', 'educa', 'employ1', 'income2', 'weight2', 'sex', 'pregnant', 'diffwalk', 'smoke100', 'smokday2', 'stopsmk2', 'usenow3', 'alcday5', 'avedrnk2', 'drnk3ge5', 'fruit1', 'fvgreen', 'exerany2', 'prediab1', 'qlmentl2', 'qlstres2', 'drvisits', 'ssbsugar', 'cvdasprn', 'scntwrk1')
 
 brfss_reduced <- brfss2013[keeps]
 ```
 
 ```{r keeps}
+# Rename the variables to be more descriptive
+
 new_names <- c('state', 'month', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'bp_meds', 'time_since_cholcheck', 'heart_attack', 'angina', 'stroke', 'asthma', 'has_asthma_now', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'pregnant', 'difficulty_walk', 'smoke_100', 'freq_smoke', 'stop_smoke_year', 'smokeless_tabac', 'alc_past_30', 'alc_perday_30', 'binge_alc', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'prediabetes', 'depressed_30', 'anxious_30', 'dr_visits_year', 'soda_freq', 'aspirin_daily', 'work_hours_week')
 
 names(brfss_reduced) <- new_names
 ```
 
 ```{r check for NAs}
+# Check to see how many missing values for each column
+
 missing_vals <- colSums(is.na(brfss_reduced))
 sort(missing_vals)
 ```
 
 ```{r}
+# Drop the variables which have too many missing values
+
 brfss_reduced_drops <- subset(brfss_reduced, select = -c(dr_visits_year, prediabetes, binge_alc, alc_perday_30, freq_smoke, bp_meds, aspirin_daily, soda_freq, pregnant, stop_smoke_year, has_asthma_now, work_hours_week, depressed_30, anxious_30))
 ```
 
 ```{r}
+# Remove the rows which have na values in any of the remaining variables
+
 brfss_complete <- na.omit(brfss_reduced_drops)
 ```
 
 ```{r}
+# Inspect the dataframe
+
 str(brfss_complete)
 ```
 
+For the factors, we want to change some of the variable factors to be more intuitive/descriptive, start by inspecting the levels for the factors we might want to change.
+
 ```{r}
+# Check the levels for some varibles
+
 levels(brfss_complete$high_bp)
 levels(brfss_complete$employment_status)
 levels(brfss_complete$smokeless_tabac)
 levels(brfss_complete$diabetes)
 ```
+Change the yes/no factors to 1/0 for model purposes and change other factors in the variables above to make them better grouped.
 
 ```{r}
+# Change the factor levels for the variables wwe feel would be better off changed
+
 levels(brfss_complete$health_coverage)[levels(brfss_complete$health_coverage) == 'Yes'] <- 1
 levels(brfss_complete$health_coverage)[levels(brfss_complete$health_coverage) == 'No'] <- 0
 
@@ -124,5 +145,10 @@ levels(brfss_complete$smokeless_tabac)[levels(brfss_complete$smokeless_tabac) ==
 ```
 
 ```{r}
+# Inspect the structure of the dataframe with changed variables
+
 str(brfss_complete)
 ```
+
+
+### EDA
