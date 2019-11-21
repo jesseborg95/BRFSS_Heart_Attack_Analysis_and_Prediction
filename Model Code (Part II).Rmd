@@ -3,7 +3,7 @@ title: "DATS6101 Group Project: Predicting Strokes"
 author: "Jonathan Giguere, Jesse Borg, Ese Emuraye, Sarah Gates"
 date: "December 11th 2019"
 output: 
-   html_document:
+   html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -19,7 +19,7 @@ knitr::opts_chunk$set(error = FALSE)
 loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.packages(x,dep=T,repos="http://cran.us.r-project.org"); if(!require(x,character.only=T)) stop("Package not found") } }
 ```
 
-### Load packages
+Start by loading the packages we know will be needed for the project. Then load the brfss 2013 data which is as an RData file as opposed to a csv.
 
 ```{r load-packages, message = FALSE}
 loadPkg('ggplot2')
@@ -27,42 +27,43 @@ loadPkg('dplyr')
 loadPkg('plyr')
 ```
 
-### Load data
-
 ```{r load-data}
 load("brfss2013.RData")
 ```
 
 ### Cleaning the data
 
+We started by choosing the variables which we think will be useful or the most interesting for this study and then renamed them to have more logical or descriptive names. 
 ```{r keeps}
 # Choose which variables we want to keep
 
-keeps <- c('X_state', 'imonth', 'genhlth', 'menthlth', 'hlthpln1', 'sleptim1', 'bphigh4', 'bpmeds', 'cholchk', 'cvdinfr4', 'cvdcrhd4', 'cvdstrk3', 'asthma3', 'asthnow', 'addepev2', 'chckidny', 'diabete3', 'veteran3', 'marital', 'educa', 'employ1', 'income2', 'weight2', 'sex', 'pregnant', 'diffwalk', 'smoke100', 'smokday2', 'stopsmk2', 'usenow3', 'alcday5', 'avedrnk2', 'drnk3ge5', 'fruit1', 'fvgreen', 'exerany2', 'prediab1', 'qlmentl2', 'qlstres2', 'drvisits', 'ssbsugar', 'cvdasprn', 'scntwrk1')
+keeps <- c('X_state', 'imonth', 'genhlth', 'menthlth', 'hlthpln1', 'sleptim1', 'bphigh4', 'bpmeds', 'cholchk', 'cvdinfr4', 'cvdcrhd4', 'cvdstrk3', 'asthma3', 'asthnow', 'addepev2', 'chckidny', 'diabete3', 'veteran3', 'marital', 'educa', 'employ1', 'income2', 'weight2', 'sex', 'pregnant', 'diffwalk', 'smoke100', 'smokday2', 'stopsmk2', 'usenow3', 'alcday5', 'avedrnk2', 'drnk3ge5', 'fruit1', 'fvgreen', 'exerany2', 'prediab1', 'qlmentl2', 'qlstres2', 'drvisits', 'ssbsugar', 'cvdasprn', 'scntwrk1','X_ageg5yr')
 
 brfss_reduced <- brfss2013[keeps]
 ```
 
-```{r keeps}
+```{r names}
 # Rename the variables to be more descriptive
 
-new_names <- c('state', 'month', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'bp_meds', 'time_since_cholcheck', 'heart_attack', 'angina', 'stroke', 'asthma', 'has_asthma_now', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'pregnant', 'difficulty_walk', 'smoke_100', 'freq_smoke', 'stop_smoke_year', 'smokeless_tabac', 'alc_past_30', 'alc_perday_30', 'binge_alc', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'prediabetes', 'depressed_30', 'anxious_30', 'dr_visits_year', 'soda_freq', 'aspirin_daily', 'work_hours_week')
+new_names <- c('state', 'month', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'bp_meds', 'time_since_cholcheck', 'heart_attack', 'angina', 'stroke', 'asthma', 'has_asthma_now', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'pregnant', 'difficulty_walk', 'smoke_100', 'freq_smoke', 'stop_smoke_year', 'smokeless_tabac', 'alc_past_30', 'alc_perday_30', 'binge_alc', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'prediabetes', 'depressed_30', 'anxious_30', 'dr_visits_year', 'soda_freq', 'aspirin_daily', 'work_hours_week','age5yr_bucket')
 
 names(brfss_reduced) <- new_names
 ```
 
+Once this was done, check to see how many missing values for each column.
 ```{r check for NAs}
-# Check to see how many missing values for each column
-
 missing_vals <- colSums(is.na(brfss_reduced))
 sort(missing_vals)
 ```
 
+Since there are some columns with a lot of missing values, we decided to drop the ones with more than 100,000 missing entries.
 ```{r}
 # Drop the variables which have too many missing values
 
 brfss_reduced_drops <- subset(brfss_reduced, select = -c(dr_visits_year, prediabetes, binge_alc, alc_perday_30, freq_smoke, bp_meds, aspirin_daily, soda_freq, pregnant, stop_smoke_year, has_asthma_now, work_hours_week, depressed_30, anxious_30))
 ```
+
+We then removed the rows which have any missing values so that the data we have is complete. If there are enough rows left, we will keep it like this, if not we will have to use rows with missing values.
 
 ```{r}
 # Remove the rows which have na values in any of the remaining variables
@@ -70,6 +71,7 @@ brfss_reduced_drops <- subset(brfss_reduced, select = -c(dr_visits_year, prediab
 brfss_complete <- na.omit(brfss_reduced_drops)
 ```
 
+Inspect the dataframe after the missing values have been removed, which shows that there are still over 300,000 observations and 30 variables. This is more than enough data for what we need. 
 ```{r}
 # Inspect the dataframe
 
@@ -86,6 +88,7 @@ levels(brfss_complete$employment_status)
 levels(brfss_complete$smokeless_tabac)
 levels(brfss_complete$diabetes)
 ```
+
 Change the yes/no factors to 1/0 for model purposes and change other factors in the variables above to make them better grouped.
 
 ```{r}
@@ -144,11 +147,86 @@ levels(brfss_complete$smokeless_tabac)[levels(brfss_complete$smokeless_tabac) ==
 
 ```
 
-```{r}
-# Inspect the structure of the dataframe with changed variables
+Inspect the structure of the dataframe with changed variables
 
+```{r}
 str(brfss_complete)
 ```
 
 
 ### EDA
+
+How many participants have smoked at least 100 cigarettes?
+
+```{r}
+ggplot(brfss_complete, aes(x = smoke_100, fill = sex)) +
+        geom_bar() + 
+        ggtitle('Number of participants to have smoked at least 100 cigarettes') +
+        ylab('Total') +
+        xlab('') +
+        scale_x_discrete(labels= c('Yes', 'No')) +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+How many participants use smokeless tobacco products?
+
+```{r}
+ggplot(brfss_complete, aes(x = smokeless_tabac, fill = sex)) +
+        geom_bar() + 
+        ggtitle('Number of participants to have used smokeless tobacco products') +
+        ylab('Total') +
+        xlab('') +
+        scale_x_discrete(labels= c('Yes', 'No')) +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+Alcohol
+
+```{r}
+hist(brfss_complete$alc_past_30,
+     main = 'Frequency of alcohol consumption in 2013 among participants',
+     xlab = 'Alcohol Consumption',
+     col = magma(3),
+     breaks=seq(0,250,by=50))
+```
+
+How many times did participants have fruit in the past year?
+
+```{r}
+hist(brfss_complete$fruit_freq,
+     main = 'Frequency of fruit consumption in 2013 among participants',
+     xlab = 'Fruit Consumption',
+     col = viridis(7),
+     breaks=seq(0,400,by=50))
+```
+
+How many times did participants eat dark green vegetables in the past year?
+
+```{r}
+hist(brfss_complete$green_veg_freq,
+     main = 'Frequency of dark green vegetable consumption in 2013 among participants',
+     xlab = 'Dark Green Vegetable Consumption',
+     col = cividis(3))
+```
+
+How many participants have exercised in the past 30 days
+
+```{r}
+ggplot(brfss_complete, aes(x = exercise_30, fill = age5yr_bucket)) +
+        geom_bar() + 
+        ggtitle('Number of participants to have exercised in the past 30 days') +
+        ylab('Total') +
+        xlab('') +
+        scale_x_discrete(labels= c('Yes', 'No')) +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+        scale_fill_manual(values=plasma(13))
+```
