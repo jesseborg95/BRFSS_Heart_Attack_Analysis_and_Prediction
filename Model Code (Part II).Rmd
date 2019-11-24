@@ -156,9 +156,8 @@ How many participants have diabetes?
 ```{r}
 ggplot(brfss_complete, aes(x = diabetes, fill = heart_attack)) +
         geom_bar() + 
-        ggtitle('Number of participants that have diabetes') +
+        ggtitle('Number of participants that heart attack among diabetes patients') +
         ylab('Total') +
-        xlab('') +
         scale_x_discrete(labels= c('Yes', 'No')) +
         theme_bw() +
         theme(plot.title = element_text(hjust = 0.5)) + 
@@ -170,10 +169,8 @@ How many participants are gainfully employed?
 ```{r}
 ggplot(brfss_complete, aes(x = employment_status, fill = heart_attack)) +
         geom_bar() + 
-        ggtitle('Participants employment distribution') +
+        ggtitle('Participants with heart attack by employment status ') +
         ylab('Total') +
-        xlab('') +
-       # scale_x_discrete(labels= c('Yes', 'No')) +
         theme_bw() +
         theme(plot.title = element_text(hjust = 0.5)) + 
         theme(axis.text.x = element_text(size = 11, color = 'black')) +
@@ -184,10 +181,8 @@ How is the income of participants distributed?
 ```{r}
 ggplot(brfss_complete, aes(x = income, fill = heart_attack)) +
         geom_bar() + 
-        ggtitle('Participants Income distribution') +
+        ggtitle('Participants with heart attack by Income distribution') +
         ylab('Total') +
-        xlab('') +
-       # scale_x_discrete(labels= c('Yes', 'No')) +
         theme_bw() +
         theme(plot.title = element_text(hjust = 0.5)) + 
         theme(axis.text.x = element_text(size = 11, color = 'black')) +
@@ -201,18 +196,14 @@ hist(brfss_complete$weight,
      main = 'Weight Distribution of Participants',
      xlab = 'Weight (in Pounds)',
      col = brfss_complete$heart_attack)
-     #col = magma(3),
-     #breaks=seq(0,250,by=50))
 ```
 
 How is the sex of participants distributed?
 ```{r}
 ggplot(brfss_complete, aes(x = sex, fill = heart_attack)) +
         geom_bar() + 
-        ggtitle('Participants Sex distribution') +
+        ggtitle('Participants with heart attack by sex') +
         ylab('Total') +
-        xlab('') +
-       # scale_x_discrete(labels= c('Yes', 'No')) +
         theme_bw() +
         theme(plot.title = element_text(hjust = 0.5)) + 
         theme(axis.text.x = element_text(size = 11, color = 'black')) +
