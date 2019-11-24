@@ -151,7 +151,6 @@ str(brfss_complete)
 
 
 ### EDA
-
 Sarah's EDA, compare to heart attack:
 - Time since cholesterols check and heart attack?\
 - Smoking and heart attacks?\
@@ -263,3 +262,61 @@ heart_attack_logit1 <- glm(heart_attack ~ sex + sleep_time + age5yr_bucket, fami
 summary(heart_attack_logit1)
 ```
 
+=======
+How many participants have diabetes?
+```{r}
+ggplot(brfss_complete, aes(x = diabetes, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Number of participants that heart attack among diabetes patients') +
+        ylab('Total') +
+        scale_x_discrete(labels= c('Yes', 'No')) +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+How many participants are gainfully employed?
+```{r}
+ggplot(brfss_complete, aes(x = employment_status, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Participants with heart attack by employment status ') +
+        ylab('Total') +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+How is the income of participants distributed?
+```{r}
+ggplot(brfss_complete, aes(x = income, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Participants with heart attack by Income distribution') +
+        ylab('Total') +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+How is the weight of participants distributed?
+```{r}
+brfss_complete$weight = as.numeric(brfss_complete$weight)
+hist(brfss_complete$weight,
+     main = 'Weight Distribution of Participants',
+     xlab = 'Weight (in Pounds)',
+     col = brfss_complete$heart_attack)
+```
+
+How is the sex of participants distributed?
+```{r}
+ggplot(brfss_complete, aes(x = sex, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Participants with heart attack by sex') +
+        ylab('Total') +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
