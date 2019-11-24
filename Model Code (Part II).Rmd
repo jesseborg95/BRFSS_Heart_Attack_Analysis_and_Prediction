@@ -24,7 +24,8 @@ Start by loading the packages we know will be needed for the project. Then load 
 ```{r load-packages, message = FALSE}
 loadPkg('ggplot2')
 loadPkg('dplyr')
-loadPkg('plyr')
+loadPkg('usmap')
+
 ```
 
 ```{r load-data}
@@ -37,15 +38,17 @@ We started by choosing the variables which we think will be useful or the most i
 ```{r keeps}
 # Choose which variables we want to keep
 
-keeps <- c('X_state', 'imonth', 'genhlth', 'menthlth', 'hlthpln1', 'sleptim1', 'bphigh4', 'bpmeds', 'cholchk', 'cvdinfr4', 'cvdcrhd4', 'cvdstrk3', 'asthma3', 'asthnow', 'addepev2', 'chckidny', 'diabete3', 'veteran3', 'marital', 'educa', 'employ1', 'income2', 'weight2', 'sex', 'pregnant', 'diffwalk', 'smoke100', 'smokday2', 'stopsmk2', 'usenow3', 'alcday5', 'avedrnk2', 'drnk3ge5', 'fruit1', 'fvgreen', 'exerany2', 'prediab1', 'qlmentl2', 'qlstres2', 'drvisits', 'ssbsugar', 'cvdasprn', 'scntwrk1','X_ageg5yr')
+keeps <- c('X_state', 'imonth', 'genhlth', 'menthlth', 'hlthpln1', 'sleptim1', 'bphigh4', 'bpmeds', 'cholchk','toldhi2', 'cvdinfr4', 'cvdcrhd4', 'cvdstrk3', 'asthma3', 'asthnow', 'addepev2', 'chckidny', 'diabete3', 'veteran3', 'marital', 'educa', 'employ1', 'income2', 'weight2', 'sex', 'pregnant', 'diffwalk', 'smoke100', 'smokday2', 'stopsmk2', 'usenow3', 'alcday5', 'avedrnk2', 'drnk3ge5', 'fruit1', 'fvgreen', 'exerany2', 'prediab1', 'qlmentl2', 'qlstres2', 'drvisits', 'ssbsugar', 'cvdasprn', 'scntwrk1','X_ageg5yr')
 
 brfss_reduced <- brfss2013[keeps]
 ```
 
-```{r names}
+
+```{r rename}
 # Rename the variables to be more descriptive
 
-new_names <- c('state', 'month', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'bp_meds', 'time_since_cholcheck', 'heart_attack', 'angina', 'stroke', 'asthma', 'has_asthma_now', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'pregnant', 'difficulty_walk', 'smoke_100', 'freq_smoke', 'stop_smoke_year', 'smokeless_tabac', 'alc_past_30', 'alc_perday_30', 'binge_alc', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'prediabetes', 'depressed_30', 'anxious_30', 'dr_visits_year', 'soda_freq', 'aspirin_daily', 'work_hours_week','age5yr_bucket')
+
+new_names <- c('state', 'month', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'bp_meds', 'time_since_cholcheck','told_high_chol', 'heart_attack', 'angina', 'stroke', 'asthma', 'has_asthma_now', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'pregnant', 'difficulty_walk', 'smoke_100', 'freq_smoke', 'stop_smoke_year', 'smokeless_tabac', 'alc_past_30', 'alc_perday_30', 'binge_alc', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'prediabetes', 'depressed_30', 'anxious_30', 'dr_visits_year', 'soda_freq', 'aspirin_daily', 'work_hours_week','age5yr_bucket')
 
 names(brfss_reduced) <- new_names
 ```
@@ -153,17 +156,50 @@ Inspect the structure of the dataframe with changed variables
 str(brfss_complete)
 ```
 
+### Jonathan EDA
 
-### EDA
+```{r states and heart attack data}
+#Making dataframe for visualizing heart attacks per state
+state_map_df <- brfss_complete %>% select(state, heart_attack) %>% mutate(state = as.character(state)) %>% group_by(state) %>% summarise(sum_ = sum(as.numeric(heart_attack))) %>% filter(state != c('District of Columbia', 'Puerto Rico', 'Guam'))
+```
 
-How many participants have smoked at least 100 cigarettes?
+```{r states and heart map}
+#Map showing number of heart attacks per
+plot_usmap(data = state_map_df, values = "sum_", color = "white") + 
+  scale_fill_continuous(name = "Heart Attack Frequency", label = scales::comma) + 
+  theme(legend.position = "right")
+```
 
-```{r}
-ggplot(brfss_complete, aes(x = smoke_100, fill = sex)) +
+```{r states and participants data}
+#Make dataframe showing number of survey particpants by state
+participants_map_df <-  brfss_complete %>% group_by(state) %>% summarise(n = n())
+```
+
+```{r states and respondents}
+#Visualize map of number of participants per state
+plot_usmap(data = participants_map_df, values = "n", color = "white") + 
+  scale_fill_continuous(name = "Survey Participants by State", label = scales::comma) + 
+  theme(legend.position = "right") 
+```
+
+```{r heart attacks for different gen_health levels}
+#Visualize proportion of respondents with heart attacks by gen_health
+ggplot(brfss_complete, aes(x = gen_health, fill = heart_attack)) +
         geom_bar() + 
-        ggtitle('Number of participants to have smoked at least 100 cigarettes') +
+        ggtitle('Number of participants that have had heart attack among levels of general health') +
         ylab('Total') +
-        xlab('') +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+```{r heart attacks based on health coverage}
+#Visualize proportion of respondents with heart attacks by health_coverage
+ggplot(brfss_complete, aes(x = health_coverage, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Number of participants that heart attack among people with and without health insurance') +
+        ylab('Total') +
         scale_x_discrete(labels= c('Yes', 'No')) +
         theme_bw() +
         theme(plot.title = element_text(hjust = 0.5)) + 
@@ -171,8 +207,180 @@ ggplot(brfss_complete, aes(x = smoke_100, fill = sex)) +
         theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 ```
 
-How many participants use smokeless tobacco products?
+```{r heart attacks based on high blood pressure}
+#Visualize proportion of respondents with heart attacks by high_bp
+ggplot(brfss_complete, aes(x = high_bp, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Number of participants that heart attack among people with and without high blood pressure') +
+        ylab('Total') +
+        scale_x_discrete(labels= c('Yes', 'No')) +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
 
+```{r weight, sleep time, and heart attack}
+ggplot(brfss_complete, aes(x=sleep_time, y=as.numeric(weight), color=heart_attack)) +
+  geom_point()
+```
+
+```{r sleep time and heart attack data}
+#Filter out extreme sleep numbers to get ready to visualize
+sleep_heartattack_df <- brfss_complete %>% select(sleep_time, heart_attack) %>%
+   filter(as.integer(sleep_time)<14) %>%  filter(as.integer(sleep_time)>3) 
+```
+
+```{r sleep time and heart attack graph}
+#Visualize sleep_time and heart_attack
+ggplot(sleep_heartattack_df, aes(x = sleep_time, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Number of participants that have had heart attack among levels of sleep') +
+        ylab('Total') +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+```
+
+```{r}
+sleep_heartattack_df
+```
+
+```{r}
+str(brfss_complete)
+min(as.numeric(brfss_complete$weight))
+```
+        
+### EDA
+Sarah's EDA, compare to heart attack:
+- Time since cholesterols check and heart attack?\
+- Smoking and heart attacks?\
+- Angina and heart attack?\
+- Depression and heart attack?\
+- Kidney disease and heart attack?\
+- Age
+
+Cholesterol check
+```{r}
+brfss_complete <- brfss_complete %>%
+  mutate(cholchkrecent = ifelse(time_since_cholcheck == "Within past year", "Recent", "Not Recent"))
+  
+brfss_complete <- brfss_complete %>%
+  mutate(cholchkrecent_yes = ifelse(cholchkrecent == "Recent", 1, 0))
+  
+brfss_complete <- brfss_complete %>%
+  mutate(cholchkrecent_no = ifelse(cholchkrecent == "Not Recent", 1, 0))
+
+
+
+T_cholchkrecent <- brfss_complete %>%
+  filter(told_high_chol != "No", !is.na(time_since_cholcheck), !is.na(age5yr_bucket)) %>%
+  group_by(age5yr_bucket) %>% 
+  summarise(cholchkratio = sum(cholchkrecent_yes) / sum(cholchkrecent_no), cholchkpercent = sum(cholchkrecent_yes) / (sum(cholchkrecent_no) + sum(cholchkrecent_yes)), cholchkcount = n())
+
+
+
+#ratio of those checked
+ggplot(data = T_cholchkrecent, aes(x = age5yr_bucket, y = cholchkratio)) +
+       geom_point() +
+       theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+#percent of those checked
+ggplot(data = T_cholchkrecent, aes(x = age5yr_bucket, y = cholchkpercent)) +
+       geom_point() +
+       theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+T_cholchkrecent %>%
+  group_by(age5yr_bucket) %>%
+  summarise(cholchkratio, cholchkpercent, cholchkcount)
+```
+
+```{r}
+
+ggplot(brfss_complete, aes(x=age5yr_bucket, y=time_since_cholcheck, color = heart_attack)) +
+  geom_point(size=2) +
+  geom_jitter()
+```
+
+
+
+Smoking and heart attack - TRY BAR CHART
+```{r}
+ggplot(brfss_complete, aes(x = heart_attack)) + geom_bar(aes(fill = smoke_100))
+
+```
+
+Angina - INTERESTING DISTRIBUTION, EXPLORE THIS FURTHER - BY AGE? BY GENDER?
+```{r}
+ggplot(brfss_complete, aes(x = heart_attack)) + geom_bar(aes(fill = angina))
+
+```
+
+Depression
+```{r}
+ggplot(brfss_complete, aes(x = heart_attack)) + geom_bar(aes(fill = depression))
+
+```
+
+Kidney disease- maybe look at kidney disease vs heart attack at different age brackets AND between genders, side by side bar chart
+```{r}
+ggplot(brfss_complete, aes(x = heart_attack)) + geom_bar(aes(fill = kidney_disease))
+
+```
+
+
+Perform correlation plot
+
+## Section 3
+  
+### 3.1: Logistic Regression
+
+
+NEED TO NARROW DOWN TRAINING SET?
+```{r}
+# create test set and training set
+set.seed(1)
+heart_attack_sample <- sample(2, nrow(brfss_complete), replace=TRUE, prob=c(0.70, 0.30)) # ASK EDWIN ABOUT REPLACE = TRUE
+
+# select columns x-y as predictor variables for test/train outputs
+heart_attack_training <- brfss_complete[heart_attack_sample==1, c('heart_attack', 'state', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
+
+heart_attack_test <- brfss_complete[heart_attack_sample==2, c('heart_attack', 'state', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
+
+# create output variable for heart attack - NEED THIS?
+# heart_attack.trainLabels <- brfss_complete[heart_attack_sample==1, 'heart_attack']
+# heart_attack.testLabels <- brfss_complete[heart_attack_sample==2, 'heart_attack']
+
+```
+
+```{r}
+# logistic regression - ONLY STATE OF FLORIDA??
+# run chi squ test between categorical variables
+# use forward selection method
+heart_attack_logit1 <- glm(heart_attack ~ sex + sleep_time + age5yr_bucket, family="binomial", data = heart_attack_training)
+  
+# (state + gen_health + mental_health + health_coverage + sleep_time + high_bp + time_since_cholcheck + angina + stroke + asthma + depression + kidney_disease + diabetes + veteran + marital_status + education_level + employment_status + income + weight + sex + difficulty_walk + smoke_100 + alc_past_30 + fruit_freq + green_veg_freq + exercise_30 + age5yr_bucket, family="binomial", data = heart_attack_training)
+
+summary(heart_attack_logit1)
+```
+
+### EDA
+
+How many participants have smoked at least 100 cigarettes?
+```{r}
+ggplot(brfss_complete, aes(x = smoke_100, fill = sex)) +
+        geom_bar() + 
+        ggtitle('Number of participants to have smoked at least 100 cigarettes') +
+        ylab('Total') +
+        xlab('') +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```        
+        
+How many participants use smokeless tobacco products?
 ```{r}
 ggplot(brfss_complete, aes(x = smokeless_tabac, fill = sex)) +
         geom_bar() + 
@@ -187,7 +395,6 @@ ggplot(brfss_complete, aes(x = smokeless_tabac, fill = sex)) +
 ```
 
 Alcohol
-
 ```{r}
 hist(brfss_complete$alc_past_30,
      main = 'Frequency of alcohol consumption in 2013 among participants',
@@ -207,7 +414,6 @@ hist(brfss_complete$fruit_freq,
 ```
 
 How many times did participants eat dark green vegetables in the past year?
-
 ```{r}
 hist(brfss_complete$green_veg_freq,
      main = 'Frequency of dark green vegetable consumption in 2013 among participants',
@@ -215,8 +421,8 @@ hist(brfss_complete$green_veg_freq,
      col = cividis(3))
 ```
 
-How many participants have exercised in the past 30 days
 
+How many participants have exercised in the past 30 days
 ```{r}
 ggplot(brfss_complete, aes(x = exercise_30, fill = age5yr_bucket)) +
         geom_bar() + 
@@ -229,4 +435,64 @@ ggplot(brfss_complete, aes(x = exercise_30, fill = age5yr_bucket)) +
         theme(axis.text.x = element_text(size = 11, color = 'black')) +
         theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
         scale_fill_manual(values=plasma(13))
+```
+
+How many participants have diabetes?
+```{r}
+ggplot(brfss_complete, aes(x = diabetes, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Number of participants that heart attack among diabetes patients') +
+        ylab('Total') +
+        scale_x_discrete(labels= c('Yes', 'No')) +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+How many participants are gainfully employed?
+```{r}
+ggplot(brfss_complete, aes(x = employment_status, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Participants with heart attack by employment status ') +
+        ylab('Total') +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+How is the income of participants distributed?
+```{r}
+ggplot(brfss_complete, aes(x = income, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Participants with heart attack by Income distribution') +
+        ylab('Total') +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+```
+
+```
+How is the weight of participants distributed?
+```{r}
+brfss_complete$weight = as.numeric(brfss_complete$weight)
+hist(brfss_complete$weight,
+     main = 'Weight Distribution of Participants',
+     xlab = 'Weight (in Pounds)',
+     col = brfss_complete$heart_attack)
+```
+
+
+How is the sex of participants distributed?
+```{r}
+ggplot(brfss_complete, aes(x = sex, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Participants with heart attack by sex') +
+        ylab('Total') +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 ```
