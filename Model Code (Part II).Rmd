@@ -24,7 +24,6 @@ loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.
 ```{r load-packages, message = FALSE}
 loadPkg('ggplot2')
 loadPkg('dplyr')
-loadPkg('plyr')
 ```
 
 ### Load data
@@ -38,7 +37,7 @@ load("brfss2013.RData")
 ```{r keeps}
 # Choose which variables we want to keep
 
-keeps <- c('X_state', 'imonth', 'genhlth', 'menthlth', 'hlthpln1', 'sleptim1', 'bphigh4', 'bpmeds', 'cholchk', 'cvdinfr4', 'cvdcrhd4', 'cvdstrk3', 'asthma3', 'asthnow', 'addepev2', 'chckidny', 'diabete3', 'veteran3', 'marital', 'educa', 'employ1', 'income2', 'weight2', 'sex', 'pregnant', 'diffwalk', 'smoke100', 'smokday2', 'stopsmk2', 'usenow3', 'alcday5', 'avedrnk2', 'drnk3ge5', 'fruit1', 'fvgreen', 'exerany2', 'prediab1', 'qlmentl2', 'qlstres2', 'drvisits', 'ssbsugar', 'cvdasprn', 'scntwrk1','X_ageg5yr')
+keeps <- c('X_state', 'imonth', 'genhlth', 'menthlth', 'hlthpln1', 'sleptim1', 'bphigh4', 'bpmeds', 'cholchk','toldhi2', 'cvdinfr4', 'cvdcrhd4', 'cvdstrk3', 'asthma3', 'asthnow', 'addepev2', 'chckidny', 'diabete3', 'veteran3', 'marital', 'educa', 'employ1', 'income2', 'weight2', 'sex', 'pregnant', 'diffwalk', 'smoke100', 'smokday2', 'stopsmk2', 'usenow3', 'alcday5', 'avedrnk2', 'drnk3ge5', 'fruit1', 'fvgreen', 'exerany2', 'prediab1', 'qlmentl2', 'qlstres2', 'drvisits', 'ssbsugar', 'cvdasprn', 'scntwrk1','X_ageg5yr')
 
 brfss_reduced <- brfss2013[keeps]
 ```
@@ -46,7 +45,7 @@ brfss_reduced <- brfss2013[keeps]
 ```{r keeps}
 # Rename the variables to be more descriptive
 
-new_names <- c('state', 'month', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'bp_meds', 'time_since_cholcheck', 'heart_attack', 'angina', 'stroke', 'asthma', 'has_asthma_now', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'pregnant', 'difficulty_walk', 'smoke_100', 'freq_smoke', 'stop_smoke_year', 'smokeless_tabac', 'alc_past_30', 'alc_perday_30', 'binge_alc', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'prediabetes', 'depressed_30', 'anxious_30', 'dr_visits_year', 'soda_freq', 'aspirin_daily', 'work_hours_week','age5yr_bucket')
+new_names <- c('state', 'month', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'bp_meds', 'time_since_cholcheck','told_high_chol', 'heart_attack', 'angina', 'stroke', 'asthma', 'has_asthma_now', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'pregnant', 'difficulty_walk', 'smoke_100', 'freq_smoke', 'stop_smoke_year', 'smokeless_tabac', 'alc_past_30', 'alc_perday_30', 'binge_alc', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'prediabetes', 'depressed_30', 'anxious_30', 'dr_visits_year', 'soda_freq', 'aspirin_daily', 'work_hours_week','age5yr_bucket')
 
 names(brfss_reduced) <- new_names
 ```
@@ -153,21 +152,99 @@ str(brfss_complete)
 
 ### EDA
 
+Sarah's EDA, compare to heart attack:
+- Time since cholesterols check and heart attack?\
+- Smoking and heart attacks?\
+- Angina and heart attack?\
+- Depression and heart attack?\
+- Kidney disease and heart attack?\
+- Age
 
+Cholesterol check
+```{r}
+brfss_complete <- brfss_complete %>%
+  mutate(cholchkrecent = ifelse(time_since_cholcheck == "Within past year", "Recent", "Not Recent"))
+  
+brfss_complete <- brfss_complete %>%
+  mutate(cholchkrecent_yes = ifelse(cholchkrecent == "Recent", 1, 0))
+  
+brfss_complete <- brfss_complete %>%
+  mutate(cholchkrecent_no = ifelse(cholchkrecent == "Not Recent", 1, 0))
+
+
+
+T_cholchkrecent <- brfss_complete %>%
+  filter(told_high_chol != "No", !is.na(time_since_cholcheck), !is.na(age5yr_bucket)) %>%
+  group_by(age5yr_bucket) %>% 
+  summarise(cholchkratio = sum(cholchkrecent_yes) / sum(cholchkrecent_no), cholchkpercent = sum(cholchkrecent_yes) / (sum(cholchkrecent_no) + sum(cholchkrecent_yes)), cholchkcount = n())
+
+
+
+#ratio of those checked
+ggplot(data = T_cholchkrecent, aes(x = age5yr_bucket, y = cholchkratio)) +
+       geom_point() +
+       theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+#percent of those checked
+ggplot(data = T_cholchkrecent, aes(x = age5yr_bucket, y = cholchkpercent)) +
+       geom_point() +
+       theme(axis.text.x = element_text(angle = 60, hjust = 1))
+
+T_cholchkrecent %>%
+  group_by(age5yr_bucket) %>%
+  summarise(cholchkratio, cholchkpercent, cholchkcount)
+```
+
+```{r}
+
+ggplot(brfss_complete, aes(x=age5yr_bucket, y=time_since_cholcheck, color = heart_attack)) +
+  geom_point(size=2) +
+  geom_jitter()
+```
+
+
+Smoking and heart attack - TRY BAR CHART
+```{r}
+ggplot(brfss_complete, aes(x = heart_attack)) + geom_bar(aes(fill = smoke_100))
+
+```
+
+Angina - INTERESTING DISTRIBUTION, EXPLORE THIS FURTHER - BY AGE? BY GENDER?
+```{r}
+ggplot(brfss_complete, aes(x = heart_attack)) + geom_bar(aes(fill = angina))
+
+```
+
+Depression
+```{r}
+ggplot(brfss_complete, aes(x = heart_attack)) + geom_bar(aes(fill = depression))
+
+```
+
+Kidney disease- maybe look at kidney disease vs heart attack at different age brackets AND between genders, side by side bar chart
+```{r}
+ggplot(brfss_complete, aes(x = heart_attack)) + geom_bar(aes(fill = kidney_disease))
+
+```
+
+
+Perform correlation plot
 
 ## Section 3
   
 ### 3.1: Logistic Regression
 
+
+NEED TO NARROW DOWN TRAINING SET?
 ```{r}
 # create test set and training set
 set.seed(1)
 heart_attack_sample <- sample(2, nrow(brfss_complete), replace=TRUE, prob=c(0.70, 0.30)) # ASK EDWIN ABOUT REPLACE = TRUE
 
 # select columns x-y as predictor variables for test/train outputs
-heart_attack_training <- brfss_complete[heart_attack_sample==1, c('heart_attack', 'state', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30')]
+heart_attack_training <- brfss_complete[heart_attack_sample==1, c('heart_attack', 'state', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
 
-heart_attack_test <- brfss_complete[heart_attack_sample==2, c('heart_attack', 'state', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30')]
+heart_attack_test <- brfss_complete[heart_attack_sample==2, c('heart_attack', 'state', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
 
 # create output variable for heart attack - NEED THIS?
 # heart_attack.trainLabels <- brfss_complete[heart_attack_sample==1, 'heart_attack']
@@ -176,8 +253,12 @@ heart_attack_test <- brfss_complete[heart_attack_sample==2, c('heart_attack', 's
 ```
 
 ```{r}
-# logistic regression
-heart_attack_logit1 <- glm(heart_attack ~ state + gen_health + mental_health + health_coverage + sleep_time + high_bp + time_since_cholcheck + angina + stroke + asthma + depression + kidney_disease + diabetes + veteran + marital_status + education_level + employment_status + income + weight + sex + difficulty_walk + smoke_100 + alc_past_30 + fruit_freq + green_veg_freq + exercise_30, family="binomial", data = heart_attack_training)
+# logistic regression - ONLY STATE OF FLORIDA??
+# run chi squ test between categorical variables
+# use forward selection method
+heart_attack_logit1 <- glm(heart_attack ~ sex + sleep_time + age5yr_bucket, family="binomial", data = heart_attack_training)
+  
+# (state + gen_health + mental_health + health_coverage + sleep_time + high_bp + time_since_cholcheck + angina + stroke + asthma + depression + kidney_disease + diabetes + veteran + marital_status + education_level + employment_status + income + weight + sex + difficulty_walk + smoke_100 + alc_past_30 + fruit_freq + green_veg_freq + exercise_30 + age5yr_bucket, family="binomial", data = heart_attack_training)
 
 summary(heart_attack_logit1)
 ```
