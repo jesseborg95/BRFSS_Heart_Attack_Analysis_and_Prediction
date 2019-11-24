@@ -152,3 +152,69 @@ str(brfss_complete)
 
 
 ### EDA
+How many participants have diabetes?
+```{r}
+ggplot(brfss_complete, aes(x = diabetes, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Number of participants that have diabetes') +
+        ylab('Total') +
+        xlab('') +
+        scale_x_discrete(labels= c('Yes', 'No')) +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+How many participants are gainfully employed?
+```{r}
+ggplot(brfss_complete, aes(x = employment_status, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Participants employment distribution') +
+        ylab('Total') +
+        xlab('') +
+       # scale_x_discrete(labels= c('Yes', 'No')) +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+How is the income of participants distributed?
+```{r}
+ggplot(brfss_complete, aes(x = income, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Participants Income distribution') +
+        ylab('Total') +
+        xlab('') +
+       # scale_x_discrete(labels= c('Yes', 'No')) +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+How is the weight of participants distributed?
+```{r}
+brfss_complete$weight = as.numeric(brfss_complete$weight)
+hist(brfss_complete$weight,
+     main = 'Weight Distribution of Participants',
+     xlab = 'Weight (in Pounds)',
+     col = brfss_complete$heart_attack)
+     #col = magma(3),
+     #breaks=seq(0,250,by=50))
+```
+
+How is the sex of participants distributed?
+```{r}
+ggplot(brfss_complete, aes(x = sex, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Participants Sex distribution') +
+        ylab('Total') +
+        xlab('') +
+       # scale_x_discrete(labels= c('Yes', 'No')) +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
