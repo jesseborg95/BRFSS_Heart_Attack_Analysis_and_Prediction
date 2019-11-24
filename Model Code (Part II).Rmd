@@ -2,8 +2,7 @@
 title: "DATS6101 Group Project: Predicting Strokes"
 author: "Jonathan Giguere, Jesse Borg, Ese Emuraye, Sarah Gates"
 date: "December 11th 2019"
-output: 
-   html_document:
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
@@ -24,6 +23,8 @@ loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.
 ```{r load-packages, message = FALSE}
 loadPkg('ggplot2')
 loadPkg('dplyr')
+loadPkg('usmap')
+
 ```
 
 ### Load data
@@ -37,13 +38,15 @@ load("brfss2013.RData")
 ```{r keeps}
 # Choose which variables we want to keep
 
+
 keeps <- c('X_state', 'imonth', 'genhlth', 'menthlth', 'hlthpln1', 'sleptim1', 'bphigh4', 'bpmeds', 'cholchk','toldhi2', 'cvdinfr4', 'cvdcrhd4', 'cvdstrk3', 'asthma3', 'asthnow', 'addepev2', 'chckidny', 'diabete3', 'veteran3', 'marital', 'educa', 'employ1', 'income2', 'weight2', 'sex', 'pregnant', 'diffwalk', 'smoke100', 'smokday2', 'stopsmk2', 'usenow3', 'alcday5', 'avedrnk2', 'drnk3ge5', 'fruit1', 'fvgreen', 'exerany2', 'prediab1', 'qlmentl2', 'qlstres2', 'drvisits', 'ssbsugar', 'cvdasprn', 'scntwrk1','X_ageg5yr')
 
 brfss_reduced <- brfss2013[keeps]
 ```
 
-```{r keeps}
+```{r rename}
 # Rename the variables to be more descriptive
+
 
 new_names <- c('state', 'month', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'bp_meds', 'time_since_cholcheck','told_high_chol', 'heart_attack', 'angina', 'stroke', 'asthma', 'has_asthma_now', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'pregnant', 'difficulty_walk', 'smoke_100', 'freq_smoke', 'stop_smoke_year', 'smokeless_tabac', 'alc_past_30', 'alc_perday_30', 'binge_alc', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'prediabetes', 'depressed_30', 'anxious_30', 'dr_visits_year', 'soda_freq', 'aspirin_daily', 'work_hours_week','age5yr_bucket')
 
@@ -149,7 +152,102 @@ levels(brfss_complete$smokeless_tabac)[levels(brfss_complete$smokeless_tabac) ==
 str(brfss_complete)
 ```
 
+### Jonathan EDA
 
+```{r states and heart attack data}
+#Making dataframe for visualizing heart attacks per state
+state_map_df <- brfss_complete %>% select(state, heart_attack) %>% mutate(state = as.character(state)) %>% group_by(state) %>% summarise(sum_ = sum(as.numeric(heart_attack))) %>% filter(state != c('District of Columbia', 'Puerto Rico', 'Guam'))
+```
+
+```{r states and heart map}
+#Map showing number of heart attacks per
+plot_usmap(data = state_map_df, values = "sum_", color = "white") + 
+  scale_fill_continuous(name = "Heart Attack Frequency", label = scales::comma) + 
+  theme(legend.position = "right")
+```
+
+```{r states and participants data}
+#Make dataframe showing number of survey particpants by state
+participants_map_df <-  brfss_complete %>% group_by(state) %>% summarise(n = n())
+```
+
+```{r states and respondents}
+#Visualize map of number of participants per state
+plot_usmap(data = participants_map_df, values = "n", color = "white") + 
+  scale_fill_continuous(name = "Survey Participants by State", label = scales::comma) + 
+  theme(legend.position = "right") 
+```
+
+```{r heart attacks for different gen_health levels}
+#Visualize proportion of respondents with heart attacks by gen_health
+ggplot(brfss_complete, aes(x = gen_health, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Number of participants that have had heart attack among levels of general health') +
+        ylab('Total') +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+```{r heart attacks based on health coverage}
+#Visualize proportion of respondents with heart attacks by health_coverage
+ggplot(brfss_complete, aes(x = health_coverage, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Number of participants that heart attack among people with and without health insurance') +
+        ylab('Total') +
+        scale_x_discrete(labels= c('Yes', 'No')) +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+```{r heart attacks based on high blood pressure}
+#Visualize proportion of respondents with heart attacks by high_bp
+ggplot(brfss_complete, aes(x = high_bp, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Number of participants that heart attack among people with and without high blood pressure') +
+        ylab('Total') +
+        scale_x_discrete(labels= c('Yes', 'No')) +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+```{r weight, sleep time, and heart attack}
+ggplot(brfss_complete, aes(x=sleep_time, y=as.numeric(weight), color=heart_attack)) +
+  geom_point()
+```
+
+```{r sleep time and heart attack data}
+#Filter out extreme sleep numbers to get ready to visualize
+sleep_heartattack_df <- brfss_complete %>% select(sleep_time, heart_attack) %>%
+   filter(as.integer(sleep_time)<14) %>%  filter(as.integer(sleep_time)>3) 
+```
+
+```{r sleep time and heart attack graph}
+#Visualize sleep_time and heart_attack
+ggplot(sleep_heartattack_df, aes(x = sleep_time, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Number of participants that have had heart attack among levels of sleep') +
+        ylab('Total') +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+```
+
+```{r}
+sleep_heartattack_df
+```
+
+```{r}
+str(brfss_complete)
+min(as.numeric(brfss_complete$weight))
+```
+        
 ### EDA
 Sarah's EDA, compare to heart attack:
 - Time since cholesterols check and heart attack?\
@@ -262,7 +360,6 @@ heart_attack_logit1 <- glm(heart_attack ~ sex + sleep_time + age5yr_bucket, fami
 summary(heart_attack_logit1)
 ```
 
-=======
 How many participants have diabetes?
 ```{r}
 ggplot(brfss_complete, aes(x = diabetes, fill = heart_attack)) +
@@ -297,9 +394,12 @@ ggplot(brfss_complete, aes(x = income, fill = heart_attack)) +
         theme_bw() +
         theme(plot.title = element_text(hjust = 0.5)) + 
         theme(axis.text.x = element_text(size = 11, color = 'black')) +
-        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
 ```
 
+
+
+```
 How is the weight of participants distributed?
 ```{r}
 brfss_complete$weight = as.numeric(brfss_complete$weight)
