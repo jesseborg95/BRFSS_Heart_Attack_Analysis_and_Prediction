@@ -1,5 +1,5 @@
 ---
-title: "DATS6101 Group Project: Predicting Strokes"
+title: "DATS6101 Group Project: Predicting Heart Attacks"
 author: "Jonathan Giguere, Jesse Borg, Ese Emuraye, Sarah Gates"
 date: "December 11th 2019"
 output: 
@@ -19,23 +19,26 @@ knitr::opts_chunk$set(error = FALSE)
 loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.packages(x,dep=T,repos="http://cran.us.r-project.org"); if(!require(x,character.only=T)) stop("Package not found") } }
 ```
 
+## Loading the Data
+
 Start by loading the packages we know will be needed for the project. Then load the brfss 2013 data which is as an RData file as opposed to a csv.
 
-```{r load-packages, message = FALSE}
+```{r load-packages, message = FALSE, echo=TRUE}
 loadPkg('ggplot2')
 loadPkg('dplyr')
 loadPkg('usmap')
-
+loadPkg('viridis')
 ```
 
-```{r load-data}
+```{r load-data, echo=TRUE}
 load("brfss2013.RData")
 ```
 
-### Cleaning the data
+## Cleaning the data
 
-We started by choosing the variables which we think will be useful or the most interesting for this study and then renamed them to have more logical or descriptive names. 
-```{r keeps}
+We started by choosing the variables which we think will be useful or the most interesting for this study and then renamed them to have more logical or descriptive names.
+
+```{r keeps, echo=TRUE}
 # Choose which variables we want to keep
 
 keeps <- c('X_state', 'imonth', 'genhlth', 'menthlth', 'hlthpln1', 'sleptim1', 'bphigh4', 'bpmeds', 'cholchk','toldhi2', 'cvdinfr4', 'cvdcrhd4', 'cvdstrk3', 'asthma3', 'asthnow', 'addepev2', 'chckidny', 'diabete3', 'veteran3', 'marital', 'educa', 'employ1', 'income2', 'weight2', 'sex', 'pregnant', 'diffwalk', 'smoke100', 'smokday2', 'stopsmk2', 'usenow3', 'alcday5', 'avedrnk2', 'drnk3ge5', 'fruit1', 'fvgreen', 'exerany2', 'prediab1', 'qlmentl2', 'qlstres2', 'drvisits', 'ssbsugar', 'cvdasprn', 'scntwrk1','X_ageg5yr')
@@ -44,7 +47,7 @@ brfss_reduced <- brfss2013[keeps]
 ```
 
 
-```{r rename}
+```{r rename, echo=TRUE}
 # Rename the variables to be more descriptive
 
 
@@ -60,21 +63,21 @@ sort(missing_vals)
 ```
 
 Since there are some columns with a lot of missing values, we decided to drop the ones with more than 100,000 missing entries.
-```{r}
+```{r, echo=TRUE}
 # Drop the variables which have too many missing values
 
 brfss_reduced_drops <- subset(brfss_reduced, select = -c(dr_visits_year, prediabetes, binge_alc, alc_perday_30, freq_smoke, bp_meds, aspirin_daily, soda_freq, pregnant, stop_smoke_year, has_asthma_now, work_hours_week, depressed_30, anxious_30))
 ```
 
-We then removed the rows which have any missing values so that the data we have is complete. If there are enough rows left, we will keep it like this, if not we will have to use rows with missing values.
+We then removed the rows which have any missing values so that the data we have is complete. 
 
-```{r}
+```{r, echo=TRUE}
 # Remove the rows which have na values in any of the remaining variables
 
 brfss_complete <- na.omit(brfss_reduced_drops)
 ```
 
-Inspect the dataframe after the missing values have been removed, which shows that there are still over 300,000 observations and 30 variables. This is more than enough data for what we need. 
+Inspect the dataframe after the missing values have been removed, which shows that there are still over 300,000 observations and 31 variables. This is more than enough data for what we need. 
 ```{r}
 # Inspect the dataframe
 
@@ -83,7 +86,7 @@ str(brfss_complete)
 
 For the factors, we want to change some of the variable factors to be more intuitive/descriptive, start by inspecting the levels for the factors we might want to change.
 
-```{r}
+```{r, echo=TRUE}
 # Check the levels for some varibles
 
 levels(brfss_complete$high_bp)
@@ -94,7 +97,7 @@ levels(brfss_complete$diabetes)
 
 Change the yes/no factors to 1/0 for model purposes and change other factors in the variables above to make them better grouped.
 
-```{r}
+```{r, echo=TRUE}
 # Change the factor levels for the variables wwe feel would be better off changed
 
 levels(brfss_complete$health_coverage)[levels(brfss_complete$health_coverage) == 'Yes'] <- 1
@@ -156,17 +159,26 @@ Inspect the structure of the dataframe with changed variables
 str(brfss_complete)
 ```
 
+## Exploratory Data Analysis
+
 ### Jonathan EDA
+- Heart attacks and states?
+- General  health and effects on heart attack?
+- Health coverage and heart attack?
+- Sleep and heart attack?
+- High BP and heart attack?
 
 ```{r states and heart attack data}
 #Making dataframe for visualizing heart attacks per state
-state_map_df <- brfss_complete %>% select(state, heart_attack) %>% mutate(state = as.character(state)) %>% group_by(state) %>% summarise(sum_ = sum(as.numeric(heart_attack))) %>% filter(state != c('District of Columbia', 'Puerto Rico', 'Guam'))
+#Notice that in order to add up the number of heart attacks, i convert the factor to a string and then an integer
+state_map_df <- brfss_complete %>% select(state, heart_attack) %>% mutate(state = as.character(state)) %>% group_by(state) %>% summarise(sum_ = sum(as.numeric(as.character(heart_attack)))) %>% filter(state != c('District of Columbia', 'Puerto Rico', 'Guam'))
 ```
 
 ```{r states and heart map}
 #Map showing number of heart attacks per
 plot_usmap(data = state_map_df, values = "sum_", color = "white") + 
-  scale_fill_continuous(name = "Heart Attack Frequency", label = scales::comma) + 
+  scale_fill_continuous(name = "Heart Attack Count", label = scales::comma) + 
+  labs(title = 'Number of Heart Attacks per State') +
   theme(legend.position = "right")
 ```
 
@@ -179,6 +191,7 @@ participants_map_df <-  brfss_complete %>% group_by(state) %>% summarise(n = n()
 #Visualize map of number of participants per state
 plot_usmap(data = participants_map_df, values = "n", color = "white") + 
   scale_fill_continuous(name = "Survey Participants by State", label = scales::comma) + 
+  labs(title = 'Number of Survey Participants per State') +
   theme(legend.position = "right") 
 ```
 
@@ -186,7 +199,7 @@ plot_usmap(data = participants_map_df, values = "n", color = "white") +
 #Visualize proportion of respondents with heart attacks by gen_health
 ggplot(brfss_complete, aes(x = gen_health, fill = heart_attack)) +
         geom_bar() + 
-        ggtitle('Number of participants that have had heart attack among levels of general health') +
+        ggtitle('Heart attack among levels of general health') +
         ylab('Total') +
         theme_bw() +
         theme(plot.title = element_text(hjust = 0.5)) + 
@@ -198,7 +211,7 @@ ggplot(brfss_complete, aes(x = gen_health, fill = heart_attack)) +
 #Visualize proportion of respondents with heart attacks by health_coverage
 ggplot(brfss_complete, aes(x = health_coverage, fill = heart_attack)) +
         geom_bar() + 
-        ggtitle('Number of participants that heart attack among people with and without health insurance') +
+        ggtitle('Heart attacks among people with and without health insurance') +
         ylab('Total') +
         scale_x_discrete(labels= c('Yes', 'No')) +
         theme_bw() +
@@ -211,18 +224,13 @@ ggplot(brfss_complete, aes(x = health_coverage, fill = heart_attack)) +
 #Visualize proportion of respondents with heart attacks by high_bp
 ggplot(brfss_complete, aes(x = high_bp, fill = heart_attack)) +
         geom_bar() + 
-        ggtitle('Number of participants that heart attack among people with and without high blood pressure') +
+        ggtitle('Heart attacks among people with and without high blood pressure') +
         ylab('Total') +
         scale_x_discrete(labels= c('Yes', 'No')) +
         theme_bw() +
         theme(plot.title = element_text(hjust = 0.5)) + 
         theme(axis.text.x = element_text(size = 11, color = 'black')) +
         theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-```
-
-```{r weight, sleep time, and heart attack}
-ggplot(brfss_complete, aes(x=sleep_time, y=as.numeric(weight), color=heart_attack)) +
-  geom_point()
 ```
 
 ```{r sleep time and heart attack data}
@@ -235,24 +243,15 @@ sleep_heartattack_df <- brfss_complete %>% select(sleep_time, heart_attack) %>%
 #Visualize sleep_time and heart_attack
 ggplot(sleep_heartattack_df, aes(x = sleep_time, fill = heart_attack)) +
         geom_bar() + 
-        ggtitle('Number of participants that have had heart attack among levels of sleep') +
+        ggtitle('Heart attacks among levels of sleep') +
         ylab('Total') +
         theme_bw() +
         theme(plot.title = element_text(hjust = 0.5)) + 
         theme(axis.text.x = element_text(size = 11, color = 'black')) +
         theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
 ```
-
-```{r}
-sleep_heartattack_df
-```
-
-```{r}
-str(brfss_complete)
-min(as.numeric(brfss_complete$weight))
-```
         
-### EDA
+### Sarah EDA
 Sarah's EDA, compare to heart attack:
 - Time since cholesterols check and heart attack?\
 - Smoking and heart attacks?\
@@ -307,35 +306,405 @@ ggplot(brfss_complete, aes(x=age5yr_bucket, y=time_since_cholcheck, color = hear
 
 Smoking and heart attack - TRY BAR CHART
 ```{r}
-ggplot(brfss_complete, aes(x = heart_attack)) + geom_bar(aes(fill = smoke_100))
+ggplot(brfss_complete, aes(x = smoke_100)) + geom_bar(aes(fill = heart_attack))
 
 ```
 
 Angina - INTERESTING DISTRIBUTION, EXPLORE THIS FURTHER - BY AGE? BY GENDER?
 ```{r}
-ggplot(brfss_complete, aes(x = heart_attack)) + geom_bar(aes(fill = angina))
+ggplot(brfss_complete, aes(x = angina)) + geom_bar(aes(fill = heart_attack))
 
 ```
 
 Depression
 ```{r}
-ggplot(brfss_complete, aes(x = heart_attack)) + geom_bar(aes(fill = depression))
+ggplot(brfss_complete, aes(x = depression)) + geom_bar(aes(fill = heart_attack))
 
 ```
 
 Kidney disease- maybe look at kidney disease vs heart attack at different age brackets AND between genders, side by side bar chart
 ```{r}
-ggplot(brfss_complete, aes(x = heart_attack)) + geom_bar(aes(fill = kidney_disease))
+ggplot(brfss_complete, aes(x = kidney_disease)) + geom_bar(aes(fill = heart_attack))
 
 ```
 
+### Jesse EDA
+- Smoking and heart attack?
+- Smokeless tababcco and heart attack?
+- Alcohol and heart attack?
+- Fruit and heart attack?
+- Veggies and heart attack?
+- Exercise and heart attack?
 
-Perform correlation plot
+```{r}
+ggplot(brfss_complete, aes(x = smoke_100, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Number of participants to have smoked at least 100 cigarettes') +
+        ylab('Total') +
+        xlab('') +
+        scale_x_discrete(labels= c('Yes', 'No')) +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```        
+        
+```{r}
+ggplot(brfss_complete, aes(x = smokeless_tabac, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Number of participants to have used smokeless tobacco products') +
+        ylab('Total') +
+        xlab('') +
+        scale_x_discrete(labels= c('Yes', 'No')) +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
 
-## Section 3
+```{r}
+hist(brfss_complete$alc_past_30,
+     main = 'Frequency of alcohol consumption in 2013 among participants',
+     xlab = 'Alcohol Consumption',
+     col = magma(3),
+     breaks=seq(0,250,by=50))
+```
+
+```{r}
+hist(brfss_complete$fruit_freq,
+     main = 'Frequency of fruit consumption in 2013 among participants',
+     xlab = 'Fruit Consumption',
+     col = viridis(7),
+     breaks=seq(0,400,by=50))
+```
+
+```{r}
+hist(brfss_complete$green_veg_freq,
+     main = 'Frequency of dark green vegetable consumption in 2013 among participants',
+     xlab = 'Dark Green Vegetable Consumption',
+     col = cividis(3))
+```
+
+```{r}
+ggplot(brfss_complete, aes(x = exercise_30, fill = age5yr_bucket)) +
+        geom_bar() + 
+        ggtitle('Number of participants to have exercised in the past 30 days') +
+        ylab('Total') +
+        xlab('') +
+        scale_x_discrete(labels= c('Yes', 'No')) +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
+        scale_fill_manual(values=plasma(13))
+```
+
+### Ese EDA
+- Diabetes and heart attack?
+- Employment status and heart attack?
+- Income and heart attack? 
+- Weight and heart attack?
+- Sex and heart attack?
+
+```{r}
+ggplot(brfss_complete, aes(x = diabetes, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Number of participants that heart attack among diabetes patients') +
+        ylab('Total') +
+        scale_x_discrete(labels= c('Yes', 'No')) +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+```{r}
+ggplot(brfss_complete, aes(x = employment_status, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Participants with heart attack by employment status ') +
+        ylab('Total') +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+```{r}
+ggplot(brfss_complete, aes(x = income, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Participants with heart attack by Income distribution') +
+        ylab('Total') +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
+```
+
+```{r}
+brfss_complete$weight = as.numeric(brfss_complete$weight)
+hist(brfss_complete$weight,
+     main = 'Weight Distribution of Participants',
+     xlab = 'Weight (in Pounds)',
+     col = brfss_complete$heart_attack)
+```
+
+```{r}
+ggplot(brfss_complete, aes(x = sex, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Participants with heart attack by sex') +
+        ylab('Total') +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+## Hypothesis Tests
+
+### Chi-Squared Tests of Independence
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable1 = table(brfss_complete$gen_health, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest1 = chisq.test(contable1)
+chi_p_value1 <- format(chitest1$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable2 = table(brfss_complete$mental_health, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest2 = chisq.test(contable2)
+chi_p_value2 <- format(chitest2$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable3 = table(brfss_complete$health_coverage, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest3 = chisq.test(contable3)
+chi_p_value3 <- format(chitest3$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable4 = table(brfss_complete$high_bp, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest4 = chisq.test(contable4)
+chi_p_value4 <- format(chitest4$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable5 = table(brfss_complete$time_since_cholcheck, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest5 = chisq.test(contable5)
+chi_p_value5 <- format(chitest5$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable6 = table(brfss_complete$told_high_chol, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest6 = chisq.test(contable6)
+chi_p_value6 <- format(chitest6$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable7 = table(brfss_complete$angina, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest7 = chisq.test(contable7)
+chi_p_value7 <- format(chitest7$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable8 = table(brfss_complete$stroke, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest8 = chisq.test(contable8)
+chi_p_value8 <- format(chitest8$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable9 = table(brfss_complete$asthma, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest9 = chisq.test(contable9)
+chi_p_value9 <- format(chitest9$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable10 = table(brfss_complete$depression, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest10 = chisq.test(contable10)
+chi_p_value10 <- format(chitest10$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable11 = table(brfss_complete$kidney_disease, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest11 = chisq.test(contable11)
+chi_p_value11 <- format(chitest11$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable12 = table(brfss_complete$diabetes, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest12 = chisq.test(contable12)
+chi_p_value12 <- format(chitest12$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable13 = table(brfss_complete$veteran, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest13 = chisq.test(contable13)
+chi_p_value13 <- format(chitest13$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable14 = table(brfss_complete$marital_status, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest14 = chisq.test(contable14)
+chi_p_value14 <- format(chitest14$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable15 = table(brfss_complete$education_level, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest15 = chisq.test(contable15)
+chi_p_value15 <- format(chitest15$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable16 = table(brfss_complete$employment_status, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest16 = chisq.test(contable16)
+chi_p_value16 <- format(chitest16$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable17 = table(brfss_complete$income, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest17 = chisq.test(contable17)
+chi_p_value17 <- format(chitest17$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable18 = table(brfss_complete$sex, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest18 = chisq.test(contable18)
+chi_p_value18 <- format(chitest18$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable19 = table(brfss_complete$difficulty_walk, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest19 = chisq.test(contable19)
+chi_p_value19 <- format(chitest19$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable20 = table(brfss_complete$smoke_100, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest20 = chisq.test(contable20)
+chi_p_value20 <- format(chitest20$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable21 = table(brfss_complete$smokeless_tabac, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest21 = chisq.test(contable21)
+chi_p_value21 <- format(chitest21$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable22 = table(brfss_complete$exercise_30, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest22 = chisq.test(contable22)
+chi_p_value22 <- format(chitest22$p.value, scientific = FALSE)
+```
+
+```{r}
+#making contingency table for the categorical variable and heart_attack
+contable23 = table(brfss_complete$age5yr_bucket, brfss_complete$heart_attack)
+
+#throw contingency table into chitest function and get p-value from test
+chitest23 = chisq.test(contable23)
+chi_p_value23 <- format(chitest23$p.value, digits = 3)
+```
+
+Null Hypothesis: The two variables are independent.
+
+Alternative Hypothesis: The two variables are dependent.
+
+Categorical Variable  | Chi-Test P-value < 0.05?     |Include?   | 
+----------------------|------------------------------|-----------|
+gen_health            | `r chitest1$p.value < 0.05`  | Yes       | 
+mental_health         | `r chitest2$p.value < 0.05`  | Yes       |  
+health_coverage       | `r chitest3$p.value < 0.05`  | Yes       |  
+high_bp               | `r chitest4$p.value < 0.05`  | Yes       |
+time_since_cholcheck  | `r chitest5$p.value < 0.05`  | Yes       |
+told_high_chol        | `r chitest6$p.value < 0.05`  | Yes       |
+angina                | `r chitest7$p.value < 0.05`  | Yes       |
+stroke                | `r chitest8$p.value < 0.05`  | Yes       |
+ashtma                | `r chitest9$p.value < 0.05`  | Yes       |
+depression            | `r chitest10$p.value < 0.05` | Yes       |
+kidney_disease        | `r chitest11$p.value < 0.05` | Yes       |
+diabetes              | `r chitest12$p.value < 0.05` | Yes       |
+veteran               | `r chitest13$p.value < 0.05` | Yes       |
+marital_status        | `r chitest14$p.value < 0.05` | Yes       |
+education_level       | `r chitest15$p.value < 0.05` | Yes       |
+employment_status     | `r chitest16$p.value < 0.05` | Yes       |
+income                | `r chitest17$p.value < 0.05` | Yes       |
+sex                   | `r chitest18$p.value < 0.05` | Yes       |
+difficulty_walk       | `r chitest19$p.value < 0.05` | Yes       |
+smoke_100             | `r chitest20$p.value < 0.05` | Yes       |
+smokeless_tabac       | `r chitest21$p.value < 0.05` | No        |
+exercise_30           | `r chitest22$p.value < 0.05` | Yes       |
+age5yr_bucket         | `r chitest23$p.value < 0.05` | Yes       |
+
+Based on the table above, we reject the null hypothesis for all variables except smokeless_tabac.  At a 0.05 threshold, all categorical variables have a dependent relationship with heart_attack except smokeless_tabac.  We will exclude smokeless_tabac in our models.  
+
+## Modeling
   
-### 3.1: Logistic Regression
-
+### Logistic Regression
 
 NEED TO NARROW DOWN TRAINING SET?
 ```{r}
@@ -363,136 +732,4 @@ heart_attack_logit1 <- glm(heart_attack ~ sex + sleep_time + age5yr_bucket, fami
 # (state + gen_health + mental_health + health_coverage + sleep_time + high_bp + time_since_cholcheck + angina + stroke + asthma + depression + kidney_disease + diabetes + veteran + marital_status + education_level + employment_status + income + weight + sex + difficulty_walk + smoke_100 + alc_past_30 + fruit_freq + green_veg_freq + exercise_30 + age5yr_bucket, family="binomial", data = heart_attack_training)
 
 summary(heart_attack_logit1)
-```
-
-### EDA
-
-How many participants have smoked at least 100 cigarettes?
-```{r}
-ggplot(brfss_complete, aes(x = smoke_100, fill = sex)) +
-        geom_bar() + 
-        ggtitle('Number of participants to have smoked at least 100 cigarettes') +
-        ylab('Total') +
-        xlab('') +
-        theme_bw() +
-        theme(plot.title = element_text(hjust = 0.5)) + 
-        theme(axis.text.x = element_text(size = 11, color = 'black')) +
-        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-```        
-        
-How many participants use smokeless tobacco products?
-```{r}
-ggplot(brfss_complete, aes(x = smokeless_tabac, fill = sex)) +
-        geom_bar() + 
-        ggtitle('Number of participants to have used smokeless tobacco products') +
-        ylab('Total') +
-        xlab('') +
-        scale_x_discrete(labels= c('Yes', 'No')) +
-        theme_bw() +
-        theme(plot.title = element_text(hjust = 0.5)) + 
-        theme(axis.text.x = element_text(size = 11, color = 'black')) +
-        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-```
-
-Alcohol
-```{r}
-hist(brfss_complete$alc_past_30,
-     main = 'Frequency of alcohol consumption in 2013 among participants',
-     xlab = 'Alcohol Consumption',
-     col = magma(3),
-     breaks=seq(0,250,by=50))
-```
-
-How many times did participants have fruit in the past year?
-
-```{r}
-hist(brfss_complete$fruit_freq,
-     main = 'Frequency of fruit consumption in 2013 among participants',
-     xlab = 'Fruit Consumption',
-     col = viridis(7),
-     breaks=seq(0,400,by=50))
-```
-
-How many times did participants eat dark green vegetables in the past year?
-```{r}
-hist(brfss_complete$green_veg_freq,
-     main = 'Frequency of dark green vegetable consumption in 2013 among participants',
-     xlab = 'Dark Green Vegetable Consumption',
-     col = cividis(3))
-```
-
-
-How many participants have exercised in the past 30 days
-```{r}
-ggplot(brfss_complete, aes(x = exercise_30, fill = age5yr_bucket)) +
-        geom_bar() + 
-        ggtitle('Number of participants to have exercised in the past 30 days') +
-        ylab('Total') +
-        xlab('') +
-        scale_x_discrete(labels= c('Yes', 'No')) +
-        theme_bw() +
-        theme(plot.title = element_text(hjust = 0.5)) + 
-        theme(axis.text.x = element_text(size = 11, color = 'black')) +
-        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-        scale_fill_manual(values=plasma(13))
-```
-
-How many participants have diabetes?
-```{r}
-ggplot(brfss_complete, aes(x = diabetes, fill = heart_attack)) +
-        geom_bar() + 
-        ggtitle('Number of participants that heart attack among diabetes patients') +
-        ylab('Total') +
-        scale_x_discrete(labels= c('Yes', 'No')) +
-        theme_bw() +
-        theme(plot.title = element_text(hjust = 0.5)) + 
-        theme(axis.text.x = element_text(size = 11, color = 'black')) +
-        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-```
-
-How many participants are gainfully employed?
-```{r}
-ggplot(brfss_complete, aes(x = employment_status, fill = heart_attack)) +
-        geom_bar() + 
-        ggtitle('Participants with heart attack by employment status ') +
-        ylab('Total') +
-        theme_bw() +
-        theme(plot.title = element_text(hjust = 0.5)) + 
-        theme(axis.text.x = element_text(size = 11, color = 'black')) +
-        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
-```
-
-How is the income of participants distributed?
-```{r}
-ggplot(brfss_complete, aes(x = income, fill = heart_attack)) +
-        geom_bar() + 
-        ggtitle('Participants with heart attack by Income distribution') +
-        ylab('Total') +
-        theme_bw() +
-        theme(plot.title = element_text(hjust = 0.5)) + 
-        theme(axis.text.x = element_text(size = 11, color = 'black')) +
-        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
-```
-
-```
-How is the weight of participants distributed?
-```{r}
-brfss_complete$weight = as.numeric(brfss_complete$weight)
-hist(brfss_complete$weight,
-     main = 'Weight Distribution of Participants',
-     xlab = 'Weight (in Pounds)',
-     col = brfss_complete$heart_attack)
-```
-
-
-How is the sex of participants distributed?
-```{r}
-ggplot(brfss_complete, aes(x = sex, fill = heart_attack)) +
-        geom_bar() + 
-        ggtitle('Participants with heart attack by sex') +
-        ylab('Total') +
-        theme_bw() +
-        theme(plot.title = element_text(hjust = 0.5)) + 
-        theme(axis.text.x = element_text(size = 11, color = 'black')) +
-        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 ```
