@@ -266,7 +266,10 @@ Sarah's EDA
 - Kidney disease
 - Age
 
-Cholesterol check
+Cholesterol check:  
+In exploring cholesterol and time since cholesterol check, I wanted to see if there was a pattern across age for ignoring unpleasant information. The two variables to extrapolate are if someone was told they have high colesterol and the last time they had their cholesterol check. Basically, I wanted to see if once a person is exposed to the negative information of being told they have high cholesterol, is there a pattern in their likeliness to check their cholesterol level frequently across age brackets?  
+   
+First, classify Recent and Not Recent under last cholesterol check as whether the check occurred in the last year or not. [EXPLAIN WHY ONE YEAR]. Then I create a subset of only individuals told that they have high cholesterol.
 ```{r}
 brfss_complete <- brfss_complete %>%
   mutate(cholchkrecent = ifelse(time_since_cholcheck == "Within past year", "Recent", "Not Recent"))
@@ -287,13 +290,14 @@ T_cholchkrecent <- brfss_complete %>%
 
 
 #ratio of those checked
-ggplot(data = T_cholchkrecent, aes(x = age5yr_bucket, y = cholchkratio)) +
-       geom_point() +
+ggplot(data = T_cholchkrecent, aes(x = age5yr_bucket, y = cholchkratio, color = cholchkratio, size = 1)) +
+       geom_point(show.legend = FALSE) +
        theme(axis.text.x = element_text(angle = 60, hjust = 1))
 
+
 #percent of those checked
-ggplot(data = T_cholchkrecent, aes(x = age5yr_bucket, y = cholchkpercent)) +
-       geom_point() +
+ggplot(data = T_cholchkrecent, aes(x = age5yr_bucket, y = cholchkpercent, color = cholchkpercent, size = 1)) +
+       geom_point(show.legend = FALSE) +
        theme(axis.text.x = element_text(angle = 60, hjust = 1))
 
 T_cholchkrecent %>%
@@ -305,7 +309,8 @@ T_cholchkrecent %>%
 
 ggplot(brfss_complete, aes(x=age5yr_bucket, y=time_since_cholcheck, color = heart_attack)) +
   geom_point(size=2) +
-  geom_jitter()
+  geom_jitter() +
+  theme(axis.text.x = element_text(angle = 60, hjust = 1))
 ```
 
 
