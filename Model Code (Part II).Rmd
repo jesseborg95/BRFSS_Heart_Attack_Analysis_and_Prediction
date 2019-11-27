@@ -254,11 +254,11 @@ min(as.numeric(brfss_complete$weight))
         
 ### EDA
 Sarah's EDA, compare to heart attack:
-- Time since cholesterols check and heart attack?\
-- Smoking and heart attacks?\
-- Angina and heart attack?\
-- Depression and heart attack?\
-- Kidney disease and heart attack?\
+- Time since cholesterols check and heart attack?
+- Smoking and heart attacks?
+- Angina and heart attack?
+- Depression and heart attack?
+- Kidney disease and heart attack?
 - Age
 
 Cholesterol check
