@@ -34,6 +34,14 @@ loadPkg('ggplot2')
 loadPkg('dplyr')
 loadPkg('usmap')
 loadPkg('viridis')
+loadPkg('corrplot')
+loadPkg('ResourceSelection')
+loadPkg('pROC')
+loadPkg('pscl')
+```
+
+```{r BUILD ADD}
+loadPkg('pscl')
 ```
 
 ```{r load-data, echo=TRUE}
@@ -715,38 +723,6 @@ age5yr_bucket         | `r chitest23$p.value < 0.05` | Yes       |
 Based on the table above, we reject the null hypothesis for all variables except smokeless_tabac.  At a 0.05 threshold, all categorical variables have a dependent relationship with heart_attack except smokeless_tabac.  We will exclude smokeless_tabac in our models.  
 
 ## Modeling
-  
-### Logistic Regression
-
-NEED TO NARROW DOWN TRAINING SET?
-```{r}
-# create test set and training set
-set.seed(1)
-heart_attack_sample <- sample(2, nrow(brfss_complete), replace=TRUE, prob=c(0.70, 0.30)) # ASK EDWIN ABOUT REPLACE = TRUE
-
-# select columns x-y as predictor variables for test/train outputs
-heart_attack_training <- brfss_complete[heart_attack_sample==1, c('heart_attack', 'state', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
-
-heart_attack_test <- brfss_complete[heart_attack_sample==2, c('heart_attack', 'state', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
-
-# create output variable for heart attack - NEED THIS?
-# heart_attack.trainLabels <- brfss_complete[heart_attack_sample==1, 'heart_attack']
-# heart_attack.testLabels <- brfss_complete[heart_attack_sample==2, 'heart_attack']
-
-```
-
-```{r}
-# logistic regression - ONLY STATE OF FLORIDA??
-# run chi squ test between categorical variables
-# use forward selection method
-heart_attack_logit1 <- glm(heart_attack ~ sex + sleep_time + age5yr_bucket, family="binomial", data = heart_attack_training)
-  
-# (state + gen_health + mental_health + health_coverage + sleep_time + high_bp + time_since_cholcheck + angina + stroke + asthma + depression + kidney_disease + diabetes + veteran + marital_status + education_level + employment_status + income + weight + sex + difficulty_walk + smoke_100 + alc_past_30 + fruit_freq + green_veg_freq + exercise_30 + age5yr_bucket, family="binomial", data = heart_attack_training)
-
-summary(heart_attack_logit1)
-```
-
-
 
 ```{r}
 # decision trees
@@ -863,3 +839,69 @@ bag.heart_attack
 ```
 
 
+### Logistic Regression
+
+Creates training and test sets for logistic regression
+```{r}
+# create test set and training set
+set.seed(1)
+heart_attack_sample <- sample(2, nrow(brfss_complete), replace=TRUE, prob=c(0.70, 0.30))
+
+# select columns x-y as predictor variables for test/train outputs
+heart_attack_training <- brfss_complete[heart_attack_sample==1, c('heart_attack', 'state', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
+
+heart_attack_test <- brfss_complete[heart_attack_sample==2, c('heart_attack', 'state', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
+
+# create output variable for heart attack - NEED THIS?
+# heart_attack.trainLabels <- brfss_complete[heart_attack_sample==1, 'heart_attack']
+# heart_attack.testLabels <- brfss_complete[heart_attack_sample==2, 'heart_attack']
+
+```
+
+Key variables identified in trees in order of significance: agina, employment status, gen health, high bp
+```{r}
+# logistic regression
+# run chi squ test between categorical variables
+# use forward selection method
+heart_attack_logit1 <- glm(heart_attack ~ angina + employment_status + gen_health + high_bp, family="binomial", data = heart_attack_training)
+
+# all variables
+# ( sex + sleep_time + age5yr_bucket+ state + gen_health + mental_health + health_coverage + sleep_time + high_bp + time_since_cholcheck + angina + stroke + asthma + depression + kidney_disease + diabetes + veteran + marital_status + education_level + employment_status + income + weight + sex + difficulty_walk + smoke_100 + alc_past_30 + fruit_freq + green_veg_freq + exercise_30 + age5yr_bucket, family="binomial", data = heart_attack_training)
+
+summary(heart_attack_logit1)
+```
+
+Growth/decay factors for each explanatory variable. Exponentials of the model coefficients:
+```{r growthDecayFactors, results='markup', collapse=F}
+exp(coef(heart_attack_logit1))
+```
+
+Confidence intervals of each coefficient of the model:
+```{r ConfInt, results='markup', collapse=F}
+# CIs using standard errors
+confint.default(heart_attack_logit1)
+```
+
+Run the Hosmer and Lemeshow Goodness of Fit test to evaluate model fit: 
+```{r HosmerLemeshow}
+admitLogitHoslem = hoslem.test(heart_attack_training$heart_attack, fitted(heart_attack_logit1))
+admitLogitHoslem
+```
+
+According to the Hosmer and Lemeshow Goodness of Fit test, the p value is `r admitLogitHoslem$p.value`. This is very small so it means that this model is a good fit.  
+  
+ROC & AUC analysis - THIS LOOKS ODD, WILL REVISIT
+```{r roc_auc}
+prob=predict(heart_attack_logit1, type = c("response"))
+
+heart_attack_training$prob=prob
+h <- roc(heart_attack~prob, data=heart_attack_training)
+auc(h) # area-under-curve (prefer 0.8 or higher)
+plot(h)
+```
+  
+McFadden test:  
+```{r McFadden}
+heart_attack_logit1_pr2 = pR2(heart_attack_logit1)
+heart_attack_logit1_pr2
+```
