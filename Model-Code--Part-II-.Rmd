@@ -257,6 +257,7 @@ ggplot(sleep_heartattack_df, aes(x = sleep_time, fill = heart_attack)) +
         theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) 
 ```
         
+
 ### Sarah EDA
 Sarah's EDA
 - Time since cholesterols check
@@ -744,3 +745,121 @@ heart_attack_logit1 <- glm(heart_attack ~ sex + sleep_time + age5yr_bucket, fami
 
 summary(heart_attack_logit1)
 ```
+
+
+
+```{r}
+# decision trees
+loadPkg('rpart')
+loadPkg('rattle')
+
+
+heart_attack_fit1 <- rpart(heart_attack ~ gen_health + mental_health + health_coverage + sleep_time + high_bp + time_since_cholcheck + angina + stroke + asthma + depression + kidney_disease + diabetes + veteran + marital_status + education_level + employment_status + income + weight + sex + difficulty_walk + smoke_100 + alc_past_30 + fruit_freq + green_veg_freq + exercise_30 + age5yr_bucket, data=heart_attack_training)
+
+summary(heart_attack_fit1)
+
+plot(heart_attack_fit1, uniform = TRUE, main="Classification Tree")
+text(heart_attack_fit1, use.n = TRUE, all = TRUE, cex=.8)
+```
+
+```{r}
+loadPkg('rattle')
+
+fancyRpartPlot(heart_attack_fit1)
+```
+
+
+
+```{r}
+ brfss_hrtattack <- subset(brfss_complete, heart_attack == '1')
+ brfss_no_hrtattack <- subset(brfss_complete, heart_attack == '0')
+ ratio1 <- nrow(brfss_hrtattack)/nrow(brfss_complete)  
+ ratio2 <- nrow(brfss_no_hrtattack)/nrow(brfss_complete)
+
+ set.seed(1)
+ brfss_no_hrtattack <- sample_n(brfss_no_hrtattack, nrow(brfss_hrtattack))
+
+ balanced_brfss = rbind(brfss_hrtattack, brfss_no_hrtattack)
+ nrow(balanced_brfss)
+ rownames(balanced_brfss) <- NULL
+ tail(balanced_brfss, 5)
+```
+
+```{r}
+# create test set and training set
+set.seed(1)
+balanced_hrt_attack_sample <- sample(2, nrow(balanced_brfss), replace=TRUE, prob=c(0.70, 0.30)) # ASK EDWIN ABOUT REPLACE = TRUE
+
+# select columns x-y as predictor variables for test/train outputs
+bal_hrt_attack_training <- balanced_brfss[balanced_hrt_attack_sample==1, c('heart_attack', 'state', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
+
+bal_hrt_attack_test <- balanced_brfss[balanced_hrt_attack_sample==2, c('heart_attack', 'state', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
+
+# create output variable for heart attack - NEED THIS?
+# heart_attack.trainLabels <- brfss_complete[heart_attack_sample==1, 'heart_attack']
+# heart_attack.testLabels <- brfss_complete[heart_attack_sample==2, 'heart_attack']
+```
+
+```{r}
+# decision trees
+
+heart_attack_fit2 <- tree(heart_attack ~ gen_health + mental_health + health_coverage + sleep_time + high_bp + time_since_cholcheck + angina + stroke + asthma + depression + kidney_disease + diabetes + veteran + marital_status + education_level + employment_status + income + weight + sex + difficulty_walk + smoke_100 + alc_past_30 + fruit_freq + green_veg_freq + exercise_30 + age5yr_bucket, bal_hrt_attack_training)
+
+summary(heart_attack_fit2)
+
+plot(heart_attack_fit2, uniform = TRUE, main="Classification Tree")
+text(heart_attack_fit2, use.n = TRUE, all = TRUE, cex=.8)
+```
+```{r}
+loadPkg('rattle')
+
+fancyRpartPlot(heart_attack_fit2)
+```
+
+```{r, include=T}
+loadPkg("caret") 
+cm = confusionMatrix( predict(heart_attack_fit2, type = "class"), reference = bal_hrt_attack_training[, "heart_attack"] )
+print('Overall: ')
+cm$overall
+print('Class: ')
+cm$byClass
+```
+
+
+```{r}
+tree.pred = predict(heart_attack_fit2, bal_hrt_attack_test, type = "class")
+cmm = table(tree.pred, bal_hrt_attack_test$heart_attack)
+cmm
+accuracy = (cmm[[1]] + cmm[[4]])/sum(cmm)
+accuracy
+```
+
+
+```{r}
+cv.heart_attack = cv.tree(heart_attack_fit2, FUN=prune.misclass)
+cv.heart_attack$size
+cv.heart_attack$dev
+```
+
+```{r}
+prune.heart_attack = prune.misclass(heart_attack_fit2, best = 5)
+plot(prune.heart_attack)
+text(prune.heart_attack, pretty=10)
+```
+
+```{r}
+tree.pred = predict(prune.heart_attack, bal_hrt_attack_test, type = "class")
+cmm2 = table(tree.pred, bal_hrt_attack_test$heart_attack)
+cmm2
+accuracy2 = (cmm2[[1]] + cmm2[[4]])/sum(cmm2)
+accuracy2
+```
+
+```{r}
+loadPkg('randomForest')
+#bal_hrt_attack_training <- subset(bal_hrt_attack_training, select = -c(weight, state))
+bag.heart_attack = randomForest(heart_attack~., data=bal_hrt_attack_training, mtry=25, importance= TRUE)
+bag.heart_attack
+```
+
+
