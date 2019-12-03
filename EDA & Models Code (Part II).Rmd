@@ -985,13 +985,39 @@ Next we attempt to perform bagging.  This involves using all predictor variables
 
 ```{r}
 loadPkg('randomForest')
-bal_hrt_attack_training <- subset(bal_hrt_attack_training, select = -c(weight, state))
-bag.heart_attack = randomForest(heart_attack~., data=bal_hrt_attack_training, mtry=25, importance= TRUE)
+
+#bal_hrt_attack_training <- subset(bal_hrt_attack_training, select = -c(weight, state))
+#bag.heart_attack = randomForest(heart_attack~., data=bal_hrt_attack_training, mtry=26, importance= TRUE)
 bag.heart_attack
 ```
 
-NEED TO ASSESS BAGGING accuracy and performance.
+We can see that the performance of the bagged tree performed with slightly better accuracy.
 
+```{r}
+tree.pred_bagged = predict(bag.heart_attack, bal_hrt_attack_test, type = "class")
+cmm1 = table(tree.pred_bagged, bal_hrt_attack_test$heart_attack)
+cmm1
+accuracy1 = (cmm1[[1]] + cmm1[[4]])/sum(cmm1)
+accuracy1
+```
+
+Next we will look at random forest and see if we can get even better accuracy.
+
+```{r}
+#bal_hrt_attack_training <- subset(bal_hrt_attack_training, select = -c(weight, state))
+randForest.heart_attack = randomForest(heart_attack~., data=bal_hrt_attack_training, mtry=2, importance= TRUE)
+randForest.heart_attack
+```
+
+The confusion matrix and accuracy for the random forest is given below.
+
+```{r}
+tree.pred_randForest = predict(randForest.heart_attack, bal_hrt_attack_test, type = "class")
+cmm2 = table(tree.pred_randForest, bal_hrt_attack_test$heart_attack)
+cmm2
+accuracy2 = (cmm2[[1]] + cmm2[[4]])/sum(cmm2)
+accuracy2
+```
 
 ### Logistic Regression
 
