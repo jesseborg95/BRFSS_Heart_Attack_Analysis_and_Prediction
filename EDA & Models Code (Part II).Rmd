@@ -39,6 +39,8 @@ loadPkg('viridis')
 loadPkg('ResourceSelection')
 loadPkg('pROC')
 loadPkg('pscl')
+loadPkg('caret')
+loadPkg('car')
 ```
 
 ```{r load-data, echo=TRUE}
@@ -919,14 +921,14 @@ Now that we have a balanced dataset, we split the data into training and test se
 ```{r}
 # create test set and training set
 set.seed(1)
-balanced_hrt_attack_sample <- sample(2, nrow(balanced_brfss), replace=TRUE, prob=c(0.70, 0.30)) # ASK EDWIN ABOUT REPLACE = TRUE
+balanced_hrt_attack_sample <- sample(2, nrow(balanced_brfss), replace=TRUE, prob=c(0.70, 0.30))
 
 # select columns x-y as predictor variables for test/train outputs
 bal_hrt_attack_training <- balanced_brfss[balanced_hrt_attack_sample==1, c('heart_attack', 'state', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
 
 bal_hrt_attack_test <- balanced_brfss[balanced_hrt_attack_sample==2, c('heart_attack', 'state', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
 
-# create output variable for heart attack - NEED THIS?
+# create output variable for heart attack
 # heart_attack.trainLabels <- brfss_complete[heart_attack_sample==1, 'heart_attack']
 # heart_attack.testLabels <- brfss_complete[heart_attack_sample==2, 'heart_attack']
 ```
@@ -951,7 +953,7 @@ We can see that the variables in order of importance for determining heart attac
 After creating the above tree, we want to assess how it classifies our training cases.  To do so, we will create a confusion matrix and assess metrics like accuracy, precision, and recall.
 
 ```{r, include=T}
-loadPkg("caret") 
+ 
 cm = confusionMatrix( predict(heart_attack_fit2, type = "class"), reference = bal_hrt_attack_training[, "heart_attack"] )
 print('Overall: ')
 cm$overall
@@ -983,8 +985,8 @@ Next we attempt to perform bagging.  This involves using all predictor variables
 
 ```{r}
 loadPkg('randomForest')
-#bal_hrt_attack_training <- subset(bal_hrt_attack_training, select = -c(weight, state))
-#bag.heart_attack = randomForest(heart_attack~., data=bal_hrt_attack_training, mtry=25, importance= TRUE)
+bal_hrt_attack_training <- subset(bal_hrt_attack_training, select = -c(weight, state))
+bag.heart_attack = randomForest(heart_attack~., data=bal_hrt_attack_training, mtry=25, importance= TRUE)
 bag.heart_attack
 ```
 
@@ -1005,38 +1007,98 @@ heart_attack_logit1 <- glm(heart_attack ~ angina + employment_status + gen_healt
 
 summary(heart_attack_logit1)
 ```
-
-Growth/decay factors for each explanatory variable. Exponentials of the model coefficients:
+  
+  
+Growth/decay factors for each explanatory variable (calculated as exponentials of the model coefficients):  
 ```{r growthDecayFactors, results='markup', collapse=F}
 exp(coef(heart_attack_logit1))
 ```
-
-Confidence intervals of each coefficient of the model:
+  
+  
+Confidence intervals of each coefficient of the model:  
 ```{r ConfInt, results='markup', collapse=F}
 # CIs using standard errors
 confint.default(heart_attack_logit1)
 ```
-
-Run the Hosmer and Lemeshow Goodness of Fit test to evaluate model fit: 
+  
+    
+Hosmer and Lemeshow Goodness of Fit:
 ```{r HosmerLemeshow}
-admitLogitHoslem = hoslem.test(bal_hrt_attack_training$heart_attack, fitted(heart_attack_logit1))
-admitLogitHoslem
+heart_attackLogitHoslem = hoslem.test(bal_hrt_attack_training$heart_attack, fitted(heart_attack_logit1))
+heart_attackLogitHoslem
+```
+  
+According to the Hosmer and Lemeshow Goodness of Fit test using the training dataset, the p value is `r admitLogitHoslem$p.value`. This is very small so it means that this model is a good fit.  
+  
+  
+McFadden test:    
+```{r McFadden}
+heart_attack_logit1_pr2 = pR2(heart_attack_logit1)
+heart_attack_logit1_pr2
 ```
 
-According to the Hosmer and Lemeshow Goodness of Fit test, the p value is `r admitLogitHoslem$p.value`. This is very small so it means that this model is a good fit.  
+The McFadden value of this model is `r heart_attack_logit1_pr2['McFadden']`, which means that about 35% of the variations in y is explained by the variables in the model.  
   
-ROC & AUC analysis - THIS LOOKS ODD, WILL REVISIT
+  
+ROC & AUC analysis:  
+Use training and test datasets to evaluate the area under the curve (AUC) for each.  
+  
+Training: 
 ```{r roc_auc}
-prob=predict(heart_attack_logit1, type = c("response"))
+# prob = predict(heart_attack_logit1, bal_hrt_attack_training, type = "response")
+prob = plogis(predict(heart_attack_logit1, bal_hrt_attack_training))
 
 bal_hrt_attack_training$prob=prob
 h <- roc(heart_attack~prob, data=bal_hrt_attack_training)
 auc(h) # area-under-curve (prefer 0.8 or higher)
 plot(h)
 ```
+The test determined that the area-under-curve is `r auc(h)`, which is more than 0.8. This outcome agrees with the Hosmer and Lemeshow test that the model is considered a good fit.   
   
-McFadden test:  
-```{r McFadden}
-heart_attack_logit1_pr2 = pR2(heart_attack_logit1)
-heart_attack_logit1_pr2
+Test set:  
+```{r roc_auc2}
+# prob2 = predict(heart_attack_logit1, bal_hrt_attack_test, type = "response") # use model on test data
+prob2 = plogis(predict(heart_attack_logit1, bal_hrt_attack_test))
+
+
+bal_hrt_attack_test$prob=prob2
+j <- roc(heart_attack~prob, data=bal_hrt_attack_test)
+auc(j) # area-under-curve (prefer 0.8 or higher)
+plot(j)
 ```
+  
+#### Confusion Matrix
+
+Need the following info
+- precision
+- accuracy/specificity
+- AUC
+- recall/recall
+- F1 score
+
+```{r cm}
+# VIF analysis
+# vif(heart_attack_logit1)
+
+# confusion matrix for test
+cmlog = table(bal_hrt_attack_test$heart_attack, prob2 > .5)
+cmlog
+
+testSensitivity <- 1573 / (4187 + 1573)
+testSpecificity <- 953 / (953 + 4803)
+testPrecision <- 1573 / (1573 + 4803)
+testAccuracy <- X
+```
+
+## Comparisons Between Models   
+  
+
+  
+Statistic              | Logistic Regression | Classification Tree | Bagged Tree | Random Forrest |
+-----------------------|---------------------|---------------------|-------------|----------------|
+AUC                    | `r auc(h)`          |                     |             |                |
+Precision              | `r testPrecision`   |                     |             |                |
+Accuracy               | `r `                |                     |             |                |
+Specificity            | `r testSpecificity` |                     |             |                | 
+Sensitivity/Recall     | `r testSensitivity` |                     |             |                |  
+F1 Score               | `r `                |                     |             |                | 
