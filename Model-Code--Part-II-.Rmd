@@ -802,7 +802,7 @@ bal_hrt_attack_test <- balanced_brfss[balanced_hrt_attack_sample==2, c('heart_at
 
 ```{r}
 # decision trees
-
+loadPkg('tree')
 heart_attack_fit2 <- tree(heart_attack ~ gen_health + mental_health + health_coverage + sleep_time + high_bp + time_since_cholcheck + angina + stroke + asthma + depression + kidney_disease + diabetes + veteran + marital_status + education_level + employment_status + income + weight + sex + difficulty_walk + smoke_100 + alc_past_30 + fruit_freq + green_veg_freq + exercise_30 + age5yr_bucket, bal_hrt_attack_training)
 
 summary(heart_attack_fit2)
