@@ -1093,15 +1093,8 @@ auc(j) # area-under-curve (prefer 0.8 or higher)
 plot(j)
 ```
   
-#### Confusion Matrix
 
-Need the following info
-- precision
-- accuracy/specificity
-- AUC
-- recall/recall
-- F1 score
-
+Create confusion matrix from logistic regression output
 ```{r cm}
 # VIF analysis
 # vif(heart_attack_logit1)
@@ -1115,11 +1108,11 @@ testSpecificity <- 953 / (953 + 4803)
 testPrecision <- 1573 / (1573 + 4803)
 testAccuracy <- X
 ```
-
+  
+  
 ## Comparisons Between Models   
   
 
-  
 Statistic              | Logistic Regression | Classification Tree | Bagged Tree | Random Forrest |
 -----------------------|---------------------|---------------------|-------------|----------------|
 AUC                    | `r auc(h)`          |                     |             |                |
