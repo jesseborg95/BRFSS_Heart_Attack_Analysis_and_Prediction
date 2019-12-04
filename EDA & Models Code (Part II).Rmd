@@ -1064,7 +1064,7 @@ heart_attackLogitHoslem = hoslem.test(bal_hrt_attack_training$heart_attack, fitt
 heart_attackLogitHoslem
 ```
   
-According to the Hosmer and Lemeshow Goodness of Fit test using the training dataset, the p value is `r admitLogitHoslem$p.value`. This is very small so it means that this model is a good fit.  
+According to the Hosmer and Lemeshow Goodness of Fit test using the training dataset, the p value is `r admitLogitHoslem$p.value`. This is very small so it means that this model is a good fit. Although this test is not very meaningful for models with only factors, it continues to support the other analysis. 
   
   
 McFadden test:    
@@ -1089,7 +1089,7 @@ h <- roc(heart_attack~prob, data=bal_hrt_attack_training)
 auc(h) # area-under-curve (prefer 0.8 or higher)
 plot(h)
 ```
-The test determined that the area-under-curve is `r auc(h)`, which is more than 0.8. This outcome agrees with the Hosmer and Lemeshow test that the model is considered a good fit.   
+The the area-under-curve is `r auc(h)` for the training data, which is more than 0.8. This outcome agrees with the Hosmer and Lemeshow test that the model is considered a good fit. More importantly, we will now look at the test data.   
   
 Test set:  
 ```{r roc_auc2}
@@ -1102,9 +1102,10 @@ j <- roc(heart_attack~prob, data=bal_hrt_attack_test)
 auc(j) # area-under-curve (prefer 0.8 or higher)
 plot(j)
 ```
+The the area-under-curve is `r auc(j)` which is also above .8, meaning that this is a strong model.  
   
-
-Create confusion matrix from logistic regression output
+  
+Create confusion matrix from logistic regression output  
 ```{r cm}
 # VIF analysis
 # vif(heart_attack_logit1)
@@ -1116,7 +1117,11 @@ cmlog
 testSensitivity <- 1573 / (4187 + 1573)
 testSpecificity <- 953 / (953 + 4803)
 testPrecision <- 1573 / (1573 + 4803)
-testAccuracy <- X
+testAccuracy <- (1573 + 953) / (4187 + 1573 + 953 + 4803)
+
+# F1 score
+testF1 <- 2 * testPrecision * testSensitivity / (testPrecision + testSensitivity)
+
 ```
   
   
@@ -1125,9 +1130,9 @@ testAccuracy <- X
 
 Statistic              | Logistic Regression | Classification Tree | Bagged Tree | Random Forrest |
 -----------------------|---------------------|---------------------|-------------|----------------|
-AUC                    | `r auc(h)`          |                     |             |                |
+AUC                    | `r auc(j)`          |                     |             |                |
 Precision              | `r testPrecision`   |                     |             |                |
-Accuracy               | `r `                |                     |             |                |
+Accuracy               | `r test Accuracy`   |                     |             |                |
 Specificity            | `r testSpecificity` |                     |             |                | 
 Sensitivity/Recall     | `r testSensitivity` |                     |             |                |  
-F1 Score               | `r `                |                     |             |                | 
+F1 Score               | `r testF1`          |                     |             |                | 
