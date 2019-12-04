@@ -29,7 +29,7 @@ The project will use the BRFSS data from 2013 to carry out some EDA and try to d
 
 Start by loading the packages we know will be needed for the project. Then load the brfss 2013 data which is as an RData file as opposed to a csv.
 
-```{r load-packages, message = FALSE, echo=TRUE}
+```{r load-packages, message = FALSE}
 # Load the packages using the loadPkg function
 
 loadPkg('ggplot2')
@@ -43,7 +43,7 @@ loadPkg('caret')
 loadPkg('car')
 ```
 
-```{r load-data, echo=TRUE}
+```{r load-data}
 # Load the RData dataset
 
 load("brfss2013.RData")
@@ -53,7 +53,7 @@ load("brfss2013.RData")
 
 We started by choosing the variables which we think will be useful or the most interesting for this study and then renamed them to have more logical or descriptive names.
 
-```{r keeps, echo=TRUE}
+```{r keeps}
 # Choose which variables we want to keep
 
 keeps <- c('X_state', 'imonth', 'genhlth', 'menthlth', 'hlthpln1', 'sleptim1', 'bphigh4', 'bpmeds', 'cholchk','toldhi2', 'cvdinfr4', 'cvdcrhd4', 'cvdstrk3', 'asthma3', 'asthnow', 'addepev2', 'chckidny', 'diabete3', 'veteran3', 'marital', 'educa', 'employ1', 'income2', 'weight2', 'sex', 'pregnant', 'diffwalk', 'smoke100', 'smokday2', 'stopsmk2', 'usenow3', 'alcday5', 'avedrnk2', 'drnk3ge5', 'fruit1', 'fvgreen', 'exerany2', 'prediab1', 'qlmentl2', 'qlstres2', 'drvisits', 'ssbsugar', 'cvdasprn', 'scntwrk1','X_ageg5yr')
@@ -62,7 +62,7 @@ brfss_reduced <- brfss2013[keeps]
 ```
 
 
-```{r rename, echo=TRUE}
+```{r rename}
 # Rename the variables to be more descriptive
 
 
@@ -82,7 +82,7 @@ sort(missing_vals)
 
 Since there are some columns with a lot of missing values, we decided to drop the ones with more than 100,000 missing entries.
 
-```{r, echo=TRUE}
+```{r}
 # Drop the variables which have too many missing values
 
 brfss_reduced_drops <- subset(brfss_reduced, select = -c(dr_visits_year, prediabetes, binge_alc, alc_perday_30, freq_smoke, bp_meds, aspirin_daily, soda_freq, pregnant, stop_smoke_year, has_asthma_now, work_hours_week, depressed_30, anxious_30))
@@ -90,7 +90,7 @@ brfss_reduced_drops <- subset(brfss_reduced, select = -c(dr_visits_year, prediab
 
 We then removed the rows which have any missing values so that the data we have is complete. 
 
-```{r, echo=TRUE}
+```{r}
 # Remove the rows which have na values in any of the remaining variables
 
 brfss_complete <- na.omit(brfss_reduced_drops)
@@ -106,7 +106,7 @@ str(brfss_complete)
 
 For the factors, we want to change some of the variable factors to be more intuitive/descriptive, start by inspecting the levels for the factors we might want to change.
 
-```{r, echo=TRUE}
+```{r}
 # Check the levels for some varibles
 
 levels(brfss_complete$high_bp)
@@ -117,7 +117,7 @@ levels(brfss_complete$diabetes)
 
 Change the yes/no factors to 1/0 for model purposes and change other factors in the variables above to make them better grouped.
 
-```{r, echo=TRUE}
+```{r}
 # Change the factor levels for the variables wwe feel would be better off changed
 
 levels(brfss_complete$health_coverage)[levels(brfss_complete$health_coverage) == 'Yes'] <- 1
@@ -902,18 +902,23 @@ Before diving into the creation of our first classification tree, we noticed tha
 
 
 ```{r}
- brfss_hrtattack <- subset(brfss_complete, heart_attack == '1')
- brfss_no_hrtattack <- subset(brfss_complete, heart_attack == '0')
- ratio1 <- nrow(brfss_hrtattack)/nrow(brfss_complete)  
- ratio2 <- nrow(brfss_no_hrtattack)/nrow(brfss_complete)
+# Create two subsets, one where heart attack occured (1) and one where heart attack didnt occur (0)
+brfss_hrtattack <- subset(brfss_complete, heart_attack == '1')
+brfss_no_hrtattack <- subset(brfss_complete, heart_attack == '0')
 
- set.seed(1)
- brfss_no_hrtattack <- sample_n(brfss_no_hrtattack, nrow(brfss_hrtattack))
+# Create ratios for the number of heart attacks occured and heart attacks didnt occur
+ratio1 <- nrow(brfss_hrtattack)/nrow(brfss_complete)
+ratio2 <- nrow(brfss_no_hrtattack)/nrow(brfss_complete)
 
- balanced_brfss = rbind(brfss_hrtattack, brfss_no_hrtattack)
- nrow(balanced_brfss)
- rownames(balanced_brfss) <- NULL
- tail(balanced_brfss, 5)
+# Set the seen and then take a sample of no heart attacks randomly to balance the data
+set.seed(1)
+brfss_no_hrtattack <- sample_n(brfss_no_hrtattack, nrow(brfss_hrtattack))
+
+# Display the results
+balanced_brfss = rbind(brfss_hrtattack, brfss_no_hrtattack)
+nrow(balanced_brfss)
+rownames(balanced_brfss) <- NULL
+tail(balanced_brfss, 5)
 ```
 
 Now that we have a balanced dataset, we split the data into training and test sets.  We opted to use 30% of the data for testing and 70% for training.
@@ -929,21 +934,25 @@ bal_hrt_attack_training <- balanced_brfss[balanced_hrt_attack_sample==1, c('hear
 bal_hrt_attack_test <- balanced_brfss[balanced_hrt_attack_sample==2, c('heart_attack', 'state', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
 
 # create output variable for heart attack
-# heart_attack.trainLabels <- brfss_complete[heart_attack_sample==1, 'heart_attack']
-# heart_attack.testLabels <- brfss_complete[heart_attack_sample==2, 'heart_attack']
+#heart_attack.trainLabels <- brfss_complete[heart_attack_sample==1, 'heart_attack']
+#heart_attack.testLabels <- brfss_complete[heart_attack_sample==2, 'heart_attack']
 ```
 
 ### Decision Trees
 
-First, we construct a classification tree using all variables as predictors except smokeless_tabac (excluded as a result of chi-square tests), state, and month.  We are using our balanced training data for creation of the tree.
+First, we construct a classification tree using all variables as predictors except smokeless_tabac (excluded as a result of chi-square tests), state, and month. We are using our balanced training data for creation of the tree.
 
 ```{r}
-# decision trees
+# LOoad the tree package
 loadPkg('tree')
+
+# Create a tree to predict heart attack using all the variables
 heart_attack_fit2 <- tree(heart_attack ~ gen_health + mental_health + health_coverage + sleep_time + high_bp + time_since_cholcheck + angina + stroke + asthma + depression + kidney_disease + diabetes + veteran + marital_status + education_level + employment_status + income + weight + sex + difficulty_walk + smoke_100 + alc_past_30 + fruit_freq + green_veg_freq + exercise_30 + age5yr_bucket, bal_hrt_attack_training)
 
+# Summarize the results
 summary(heart_attack_fit2)
 
+# Plot the results
 plot(heart_attack_fit2, uniform = TRUE, main="Classification Tree")
 text(heart_attack_fit2, use.n = TRUE, all = TRUE, cex=.8)
 ```
@@ -953,8 +962,10 @@ We can see that the variables in order of importance for determining heart attac
 After creating the above tree, we want to assess how it classifies our training cases.  To do so, we will create a confusion matrix and assess metrics like accuracy, precision, and recall.
 
 ```{r, include=T}
- 
+# Create a matrix to predict the heart attacks using the training set
 cm = confusionMatrix( predict(heart_attack_fit2, type = "class"), reference = bal_hrt_attack_training[, "heart_attack"] )
+
+# Print the results
 print('Overall: ')
 cm$overall
 print('Class: ')
@@ -964,9 +975,14 @@ cm$byClass
 We now look at a confusion matrix to see how well the tree classifies our test cases.  We also have calculated accuracy below.  We can see that our first decision tree classified the test cases with 77.6% accuracy.  
 
 ```{r}
+# Run the prediction for the heart attack test data
 tree.pred = predict(heart_attack_fit2, bal_hrt_attack_test, type = "class")
+
+# Create a table of the results
 cmm = table(tree.pred, bal_hrt_attack_test$heart_attack)
 cmm
+
+# Show the accuracy
 accuracy = (cmm[[1]] + cmm[[4]])/sum(cmm)
 accuracy
 ```
@@ -974,6 +990,7 @@ accuracy
 Next we will perform some cross validation to decide if our tree would benefit from any pruning.
 
 ```{r}
+# Run the cross validation of the tree, show the number of splits and the errors of each cross validation
 cv.heart_attack = cv.tree(heart_attack_fit2, FUN=prune.misclass)
 cv.heart_attack$size
 cv.heart_attack$dev
@@ -984,19 +1001,28 @@ Based on the cross validation, we can see that the optimal number of splits for 
 Next we attempt to perform bagging.  This involves using all predictor variables to make a whole bunvh of trees.  Using more than one tree will hopefully increase model performance.
 
 ```{r}
+# Load randomforest package
 loadPkg('randomForest')
 
-#bal_hrt_attack_training <- subset(bal_hrt_attack_training, select = -c(weight, state))
-#bag.heart_attack = randomForest(heart_attack~., data=bal_hrt_attack_training, mtry=26, importance= TRUE)
+# Subset the training data to exclude the weight and state of each participant
+bal_hrt_attack_training <- subset(bal_hrt_attack_training, select = -c(weight, state))
+
+# Create a forest for the subsetted data
+bag.heart_attack = randomForest(heart_attack~., data=bal_hrt_attack_training, mtry=26, importance= TRUE)
 bag.heart_attack
 ```
 
 We can see that the performance of the bagged tree performed with slightly better accuracy.
 
 ```{r}
+# Run the prediction for the bagged tree
 tree.pred_bagged = predict(bag.heart_attack, bal_hrt_attack_test, type = "class")
+
+# Create a table for the results
 cmm1 = table(tree.pred_bagged, bal_hrt_attack_test$heart_attack)
 cmm1
+
+# Calculate and show the accuracy of the results
 accuracy1 = (cmm1[[1]] + cmm1[[4]])/sum(cmm1)
 accuracy1
 ```
@@ -1004,7 +1030,8 @@ accuracy1
 Next we will look at random forest and see if we can get even better accuracy.
 
 ```{r}
-#bal_hrt_attack_training <- subset(bal_hrt_attack_training, select = -c(weight, state))
+# Use the subsetted data from before without the weight and state,
+# Create a forest using different parameters
 randForest.heart_attack = randomForest(heart_attack~., data=bal_hrt_attack_training, mtry=2, importance= TRUE)
 randForest.heart_attack
 ```
@@ -1012,9 +1039,14 @@ randForest.heart_attack
 The confusion matrix and accuracy for the random forest is given below.
 
 ```{r}
+# Run the predictions for the random forest above
 tree.pred_randForest = predict(randForest.heart_attack, bal_hrt_attack_test, type = "class")
+
+# Plot a table for the results
 cmm2 = table(tree.pred_randForest, bal_hrt_attack_test$heart_attack)
 cmm2
+
+# Plot the accuracy
 accuracy2 = (cmm2[[1]] + cmm2[[4]])/sum(cmm2)
 accuracy2
 ```
@@ -1022,6 +1054,7 @@ accuracy2
 ### Logistic Regression
 
 Key variables identified in trees in order of significance: agina, employment status, gen health, high bp
+
 ```{r}
 # logistic regression
 # run chi squ test between categorical variables
@@ -1034,67 +1067,75 @@ heart_attack_logit1 <- glm(heart_attack ~ angina + employment_status + gen_healt
 summary(heart_attack_logit1)
 ```
   
-  
-Growth/decay factors for each explanatory variable (calculated as exponentials of the model coefficients):  
+Growth/decay factors for each explanatory variable (calculated as exponentials of the model coefficients):
+
 ```{r growthDecayFactors, results='markup', collapse=F}
+# Calculate the exponentials
 exp(coef(heart_attack_logit1))
 ```
   
-  
-Confidence intervals of each coefficient of the model:  
+Confidence intervals of each coefficient of the model:
+
 ```{r ConfInt, results='markup', collapse=F}
 # CIs using standard errors
 confint.default(heart_attack_logit1)
 ```
   
-    
 Hosmer and Lemeshow Goodness of Fit:
+
 ```{r HosmerLemeshow}
+# Carry out Hosmer & Lemeshow GOF
 heart_attackLogitHoslem = hoslem.test(bal_hrt_attack_training$heart_attack, fitted(heart_attack_logit1))
 heart_attackLogitHoslem
 ```
   
-According to the Hosmer and Lemeshow Goodness of Fit test using the training dataset, the p value is `r admitLogitHoslem$p.value`. This is very small so it means that this model is a good fit.  
+According to the Hosmer and Lemeshow Goodness of Fit test using the training dataset, the p value is `r heart_attackLogitHoslem$p.value`. This is very small so it means that this model is a good fit.  
   
-  
-McFadden test:    
+McFadden test:
+
 ```{r McFadden}
+# Carry out the McFadden Test
 heart_attack_logit1_pr2 = pR2(heart_attack_logit1)
 heart_attack_logit1_pr2
 ```
 
 The McFadden value of this model is `r heart_attack_logit1_pr2['McFadden']`, which means that about 35% of the variations in y is explained by the variables in the model.  
   
-  
 ROC & AUC analysis:  
 Use training and test datasets to evaluate the area under the curve (AUC) for each.  
   
-Training: 
+Training:
+
 ```{r roc_auc}
+# Carry out the probability calculation for the training set
 # prob = predict(heart_attack_logit1, bal_hrt_attack_training, type = "response")
 prob = plogis(predict(heart_attack_logit1, bal_hrt_attack_training))
-
 bal_hrt_attack_training$prob=prob
+
+# Create the roc and then calculate and plot the area under the curve
 h <- roc(heart_attack~prob, data=bal_hrt_attack_training)
 auc(h) # area-under-curve (prefer 0.8 or higher)
 plot(h)
 ```
+
 The test determined that the area-under-curve is `r auc(h)`, which is more than 0.8. This outcome agrees with the Hosmer and Lemeshow test that the model is considered a good fit.   
   
-Test set:  
+Test set: 
+
 ```{r roc_auc2}
+# Carry out the probability calculation for the test set
 # prob2 = predict(heart_attack_logit1, bal_hrt_attack_test, type = "response") # use model on test data
 prob2 = plogis(predict(heart_attack_logit1, bal_hrt_attack_test))
-
-
 bal_hrt_attack_test$prob=prob2
+
+# Create the roc and then calculate and plot the area under the curve
 j <- roc(heart_attack~prob, data=bal_hrt_attack_test)
 auc(j) # area-under-curve (prefer 0.8 or higher)
 plot(j)
 ```
-  
 
-Create confusion matrix from logistic regression output
+Create confusion matrix from logistic regression output:
+
 ```{r cm}
 # VIF analysis
 # vif(heart_attack_logit1)
@@ -1106,13 +1147,11 @@ cmlog
 testSensitivity <- 1573 / (4187 + 1573)
 testSpecificity <- 953 / (953 + 4803)
 testPrecision <- 1573 / (1573 + 4803)
-testAccuracy <- X
+testAccuracy <- 0
 ```
-  
   
 ## Comparisons Between Models   
   
-
 Statistic              | Logistic Regression | Classification Tree | Bagged Tree | Random Forrest |
 -----------------------|---------------------|---------------------|-------------|----------------|
 AUC                    | `r auc(h)`          |                     |             |                |
