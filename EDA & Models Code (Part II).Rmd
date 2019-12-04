@@ -24,7 +24,7 @@ loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.
 
 For project two, our group used the Behavior Risk Factor Surveillance System (BRFSS) data from the 2013 survey. This data is collected by the CDC from all 50 states via landline phone and cellular phone covering a variety of health related topics. Generalizability is limited to those in the population with access to a landline or cell phone as well as to those living in a private residence or college housing. These factors leave out individuals and households who fall outside of these conditions, which means that random sampling is not fully taking place. Sampling bias occurs in the form of non-response, indicated by the NA/null points that exist in the dataset.
 
-Our goal is to analyze factors that we believe may be related to heart attacks. We will not assume causality in the EDA portion of our project. We will spend time in it exploring relationships between these variables. After this, we will build and analyze the effectiveness of building two models as they relate to classifying and possibly predicting the occurence of a heart attack in an individual. We will utilize the decision tree method for classification and logistic regression for prediction. We selected these methods because our data includes both categorica and numeric variables and needed flexible methods to be able to work with both types.  
+Our goal is to analyze factors that we believe may be related to heart attacks. We will not assume causality in the EDA portion of our project. We will spend time in it exploring relationships between these variables. After this, we will build and analyze the effectiveness of building two models as they relate to classifying and possibly predicting the occurence of a heart attack in an individual. We will utilize the decision tree method for classification and logistic regression for prediction. We selected these methods because our data includes both categorical and numeric variables and needed flexible methods to be able to work with both types.  
   
 This file contains the full code we developed for the project and will be used to then write up the summary report.
 <br></br>
@@ -199,27 +199,10 @@ This part will be the EDA of our analysis, which will help visualize the data be
 
 Start by looking at the general number of heart attacks in the US and how this changes by state. First the data must be cleaned before it is plotted as a heat map.
 
-```{r states and heart attack data}
-#Making dataframe for visualizing heart attacks per state
-#Notice that in order to add up the number of heart attacks, i convert the factor to a string and then an integer
-
-state_map_df <- brfss_complete %>% select(state, heart_attack) %>% mutate(state = as.character(state)) %>% group_by(state) %>% summarise(sum_ = sum(as.numeric(as.character(heart_attack)))) %>% filter(state != c('District of Columbia', 'Puerto Rico', 'Guam'))
-```
-
-```{r states and heart map}
-#Map showing number of heart attacks per state
-
-plot_usmap(data = state_map_df, values = "sum_", color = "white") + 
-  scale_fill_continuous(name = "Heart Attack Count", label = scales::comma) + 
-  labs(title = 'Number of Heart Attacks per State') +
-  theme(legend.position = "right")
-```
-
-We also want to look at the number of participants by US state.
-
 ```{r states and participants data}
 #Make dataframe showing number of survey particpants by state
 participants_map_df <-  brfss_complete %>% group_by(state) %>% summarise(n = n())
+participants_map_df <- participants_map_df[-c(52, 53), ]
 ```
 
 ```{r states and respondents}
@@ -228,6 +211,26 @@ plot_usmap(data = participants_map_df, values = "n", color = "white") +
   scale_fill_continuous(name = "Survey Participants by State", label = scales::comma) + 
   labs(title = 'Number of Survey Participants per State') +
   theme(legend.position = "right") 
+```
+
+```{r states and heart attack data}
+#Making dataframe for visualizing heart attacks per state
+#Notice that in order to add up the number of heart attacks, i convert the factor to a string and then an integer
+state_map_df <- brfss_complete %>% select(state, heart_attack) %>% mutate(state = as.character(state)) %>% group_by(state) %>% summarise(sum_ = sum(as.numeric(as.character(heart_attack)))) %>% filter(state != c('District of Columbia', 'Puerto Rico', 'Guam'))
+
+# Create the percentage of heart attacks to participants
+ratios <- (state_map_df$sum_ * 100)/ participants_map_df$n
+ratio_df <- data.frame(state_map_df$state, ratios)
+names(ratio_df) <- c("state", 'ratio')
+```
+
+```{r states and heart map}
+#Map showing number of heart attacks per state as a percentage of participants
+
+plot_usmap(data = ratio_df, values = "ratio", color = "white") + 
+  scale_fill_continuous(name = "Heart Attack Ratio", label = scales::comma) + 
+  labs(title = 'Ratio of Heart Attacks to Participants per State') +
+  theme(legend.position = "right")
 ```
 
 Look at how the porportion of heart attacks vary depending on the general health of the participants. 
@@ -520,6 +523,22 @@ ggplot(brfss_complete, aes(x = exercise_30, fill = age5yr_bucket)) +
         theme(axis.text.x = element_text(size = 11, color = 'black')) +
         theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
         scale_fill_manual(values=plasma(13))
+```
+
+Look at the ratio of heart attacks depending on whether participants have exercised in the past 30 days products or not.
+  
+```{r}
+# Visualize ratio of heart attacks if exercised in past 30 days
+ggplot(brfss_complete, aes(x = exercise_30, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Ratio of Heart Attacks if Participant Has Exercised in the Past 30 Days or Not') +
+        ylab('Total') +
+        xlab('Exercised in the Past 30 Days?') +
+        scale_x_discrete(labels= c('Yes', 'No')) +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 ```
 
 <br></br>
@@ -946,13 +965,9 @@ set.seed(1)
 balanced_hrt_attack_sample <- sample(2, nrow(balanced_brfss), replace=TRUE, prob=c(0.70, 0.30))
 
 # select columns x-y as predictor variables for test/train outputs
-bal_hrt_attack_training <- balanced_brfss[balanced_hrt_attack_sample==1, c('heart_attack', 'state', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
+bal_hrt_attack_training <- balanced_brfss[balanced_hrt_attack_sample==1, c('heart_attack', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income',  'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
 
-bal_hrt_attack_test <- balanced_brfss[balanced_hrt_attack_sample==2, c('heart_attack', 'state', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
-
-# create output variable for heart attack
-#heart_attack.trainLabels <- brfss_complete[heart_attack_sample==1, 'heart_attack']
-#heart_attack.testLabels <- brfss_complete[heart_attack_sample==2, 'heart_attack']
+bal_hrt_attack_test <- balanced_brfss[balanced_hrt_attack_sample==2, c('heart_attack', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income',  'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
 ```
 
 ### Decision Trees
@@ -960,11 +975,12 @@ bal_hrt_attack_test <- balanced_brfss[balanced_hrt_attack_sample==2, c('heart_at
 First, we construct a classification tree using all variables as predictors except smokeless_tabac (excluded as a result of chi-square tests), state, and month. We are using our balanced training data for creation of the tree.
 
 ```{r}
-# LOoad the tree package
+# Load the tree package
 loadPkg('tree')
 
 # Create a tree to predict heart attack using all the variables
-heart_attack_fit2 <- tree(heart_attack ~ gen_health + mental_health + health_coverage + sleep_time + high_bp + time_since_cholcheck + angina + stroke + asthma + depression + kidney_disease + diabetes + veteran + marital_status + education_level + employment_status + income + sex + difficulty_walk + smoke_100 + alc_past_30 + fruit_freq + green_veg_freq + exercise_30 + age5yr_bucket, bal_hrt_attack_training)
+
+heart_attack_fit2 <- tree(heart_attack ~ gen_health + mental_health + health_coverage + sleep_time + high_bp + time_since_cholcheck + angina + stroke + asthma + depression + kidney_disease + diabetes + veteran + marital_status + education_level + employment_status + income + sex + difficulty_walk + smoke_100 + alc_past_30 + fruit_freq + green_veg_freq + exercise_30 + age5yr_bucket, method = 'class', data = bal_hrt_attack_training)
 
 # Summarize the results
 summary(heart_attack_fit2)
@@ -978,30 +994,38 @@ We can see that the variables in order of importance for determining heart attac
 
 After creating the above tree, we want to assess how it classifies our training cases.  To do so, we will create a confusion matrix and assess metrics like accuracy, precision, and recall.
 
-```{r, include=T}
-# Create a matrix to predict the heart attacks using the training set
-cm = confusionMatrix( predict(heart_attack_fit2, type = "class"), reference = bal_hrt_attack_training[, "heart_attack"] )
-
-# Print the results
-print('Overall: ')
-cm$overall
-print('Class: ')
-cm$byClass
-```
-
 We now look at a confusion matrix to see how well the tree classifies our test cases.  We also have calculated accuracy below.  We can see that our first decision tree classified the test cases with 77.6% accuracy.  
 
 ```{r}
-# Run the prediction for the heart attack test data
+# Validate Model using decision trees 
 tree.pred = predict(heart_attack_fit2, bal_hrt_attack_test, type = "class")
 
-# Create a table of the results
+# Compute the confusion matrix
 cmm = table(tree.pred, bal_hrt_attack_test$heart_attack)
-cmm
 
-# Show the accuracy
-accuracy = (cmm[[1]] + cmm[[4]])/sum(cmm)
-accuracy
+# Compute the accuracy from the confusion matrix
+accuracy.dec = (cmm[[1]] + cmm[[4]])/sum(cmm)
+accuracy.dec
+
+# Compute the sensitivity from confusion matrix
+sensitivity.dec = cmm[[1]]/(cmm[[1]] + cmm[[2]])
+sensitivity.dec
+
+# Compute the specificity from confusion matrix
+specificity.dec = cmm[[4]]/(cmm[[3]] + cmm[[4]])
+specificity.dec
+
+# Compute the precision from confusion matrix
+precision.dec = cmm[[1]]/(cmm[[1]] + cmm[[3]])
+precision.dec
+
+# Compute the recall from confusion matrix
+recall.dec = cmm[[1]]/(cmm[[1]] + cmm[[2]])
+recall.dec
+
+# Compute the F1 Score from precision and recall
+f1score.dec = 2 * ((precision.dec * recall.dec)/(precision.dec + recall.dec))
+f1score.dec
 ```
 
 Next we will perform some cross validation to decide if our tree would benefit from any pruning.
@@ -1021,34 +1045,48 @@ Next we attempt to perform bagging.  This involves using all predictor variables
 # Load randomforest package
 loadPkg('randomForest')
 
-# Subset the training data to exclude the weight and state of each participant
-bal_hrt_attack_training <- subset(bal_hrt_attack_training, select = -c(weight, state))
-
-# Create a forest for the subsetted data
-bag.heart_attack = randomForest(heart_attack~., data=bal_hrt_attack_training, mtry=26, importance= TRUE)
+bag.heart_attack = randomForest(heart_attack~., data=bal_hrt_attack_training, mtry=25, importance= TRUE)
 bag.heart_attack
 ```
 
 We can see that the performance of the bagged tree performed with slightly better accuracy.
 
 ```{r}
-# Run the prediction for the bagged tree
+
+# Validate bagged tree model
 tree.pred_bagged = predict(bag.heart_attack, bal_hrt_attack_test, type = "class")
 
-# Create a table for the results
+# Compute confusion matrix
 cmm1 = table(tree.pred_bagged, bal_hrt_attack_test$heart_attack)
-cmm1
 
-# Calculate and show the accuracy of the results
-accuracy1 = (cmm1[[1]] + cmm1[[4]])/sum(cmm1)
-accuracy1
+# Compute the accuracy from confusion matrix
+accuracy.bag = (cmm1[[1]] + cmm1[[4]])/sum(cmm1)
+accuracy.bag
+
+# Compute the sensitivity from confusion matrix
+sensitivity.bag = cmm1[[1]]/(cmm1[[1]] + cmm1[[2]])
+sensitivity.bag
+
+# Compute the specificity from confusion matrix
+specificity.bag = cmm1[[4]]/(cmm1[[3]] + cmm1[[4]])
+specificity.bag
+
+# Compute the precision from confusion matrix
+precision.bag = cmm1[[1]]/(cmm1[[1]] + cmm1[[3]])
+precision.bag
+
+# Compute the recall from confusion matrix
+recall.bag = cmm1[[1]]/(cmm1[[1]] + cmm1[[2]])
+recall.bag
+
+# Compute the F1 Score from precision and recall
+f1score.bag = 2 * ((precision.bag * recall.bag)/(precision.bag + recall.bag))
+f1score.bag
 ```
 
 Next we will look at random forest and see if we can get even better accuracy.
 
 ```{r}
-# Use the subsetted data from before without the weight and state,
-# Create a forest using different parameters
 randForest.heart_attack = randomForest(heart_attack~., data=bal_hrt_attack_training, mtry=2, importance= TRUE)
 randForest.heart_attack
 ```
@@ -1056,16 +1094,35 @@ randForest.heart_attack
 The confusion matrix and accuracy for the random forest is given below.
 
 ```{r}
-# Run the predictions for the random forest above
+# Validate randdom Forest tree model 
 tree.pred_randForest = predict(randForest.heart_attack, bal_hrt_attack_test, type = "class")
 
-# Plot a table for the results
+# Compute confusion matrix
 cmm2 = table(tree.pred_randForest, bal_hrt_attack_test$heart_attack)
-cmm2
 
-# Plot the accuracy
-accuracy2 = (cmm2[[1]] + cmm2[[4]])/sum(cmm2)
-accuracy2
+# Compute accuracy from confusion
+accuracy.randT = (cmm2[[1]] + cmm2[[4]])/sum(cmm2)
+accuracy.randT
+
+# Compute the sensitivity from confusion matrix
+sensitivity.randT = cmm2[[1]]/(cmm2[[1]] + cmm2[[2]])
+sensitivity.randT
+
+# Compute the specificity from confusion matrix
+specificity.randT = cmm2[[4]]/(cmm2[[3]] + cmm2[[4]])
+specificity.randT
+
+# Compute the precision from confusion matrix
+precision.randT = cmm2[[1]]/(cmm2[[1]] + cmm2[[3]])
+precision.randT
+
+# Compute the recall from confusion matrix
+recall.randT = cmm2[[1]]/(cmm2[[1]] + cmm2[[2]])
+recall.randT
+
+# Compute the F1 Score from precision and recall
+f1score.randT = 2 * ((precision.randT * recall.randT)/(precision.randT + recall.randT))
+f1score.randT
 ```
 
 ### Logistic Regression
@@ -1161,24 +1218,41 @@ Create confusion matrix from logistic regression output
 
 # confusion matrix for test
 cmlog = table(bal_hrt_attack_test$heart_attack, prob2 > .5)
-cmlog
 
-testSensitivity <- 1573 / (4187 + 1573)
-testSpecificity <- 953 / (953 + 4803)
-testPrecision <- 1573 / (1573 + 4803)
-testAccuracy <- (1573 + 953) / (4187 + 1573 + 953 + 4803)
 
-# F1 score
-testF1 <- 2 * testPrecision * testSensitivity / (testPrecision + testSensitivity)
+# Compute accuracy from confusion
+accuracy.logit = (cmlog[[1]] + cmlog[[4]])/sum(cmlog)
+accuracy.logit
+
+# Compute the sensitivity from confusion matrix
+sensitivity.logit = cmlog[[1]]/(cmlog[[1]] + cmlog[[2]])
+sensitivity.logit
+
+# Compute the specificity from confusion matrix
+specificity.logit = cmlog[[4]]/(cmlog[[3]] + cmlog[[4]])
+specificity.logit
+
+# Compute the precision from confusion matrix
+precision.logit = cmlog[[1]]/(cmlog[[1]] + cmlog[[3]])
+precision.logit
+
+# Compute the recall from confusion matrix
+recall.logit = cmlog[[1]]/(cmlog[[1]] + cmlog[[2]])
+recall.logit
+
+# Compute the F1 Score from precision and recall
+f1score.logit = 2 * ((precision.logit * recall.logit)/(precision.logit + recall.logit))
+f1score.logit
 ```
   
-## Comparisons Between Models   
+  
+## Model Evaluation   
   
 Statistic              | Logistic Regression | Classification Tree | Bagged Tree | Random Forrest |
 -----------------------|---------------------|---------------------|-------------|----------------|
-AUC                    | `r auc(j)`          |                     |             |                |
-Precision              | `r testPrecision`   |                     |             |                |
-Accuracy               | `r testAccuracy`    |                     |             |                |
-Specificity            | `r testSpecificity` |                     |             |                | 
-Sensitivity/Recall     | `r testSensitivity` |                     |             |                |  
-F1 Score               | `r testF1`          |                     |             |                | 
+Accuracy               | `r accuracy.logit`    | `r accuracy.dec`    |`r accuracy.bag`| `r accuracy.randT`  |
+Specificity            | `r specificity.logit` | `r specificity.dec` |`r specificity.bag`           | `r specificity.randT` | 
+Sensitivity            | `r sensitivity.logit` | `r sensitivity.dec` |`r sensitivity.bag`           | `r sensitivity.randT` |  
+Precision              | `r precision.logit`   | `r precision.dec`   |`r precision.bag`             | `r precision.randT`   |
+Recall                 | `r recall.logit`      | `r recall.dec`      |`r recall.bag` | `r recall.randT`                |
+F1 Score               | `r f1score.logit`     | `r f1score.dec`     |`r f1score.bag`| `r f1score.randT`               | 
