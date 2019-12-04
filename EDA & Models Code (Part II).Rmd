@@ -964,7 +964,7 @@ First, we construct a classification tree using all variables as predictors exce
 loadPkg('tree')
 
 # Create a tree to predict heart attack using all the variables
-heart_attack_fit2 <- tree(heart_attack ~ gen_health + mental_health + health_coverage + sleep_time + high_bp + time_since_cholcheck + angina + stroke + asthma + depression + kidney_disease + diabetes + veteran + marital_status + education_level + employment_status + income + weight + sex + difficulty_walk + smoke_100 + alc_past_30 + fruit_freq + green_veg_freq + exercise_30 + age5yr_bucket, bal_hrt_attack_training)
+heart_attack_fit2 <- tree(heart_attack ~ gen_health + mental_health + health_coverage + sleep_time + high_bp + time_since_cholcheck + angina + stroke + asthma + depression + kidney_disease + diabetes + veteran + marital_status + education_level + employment_status + income + sex + difficulty_walk + smoke_100 + alc_past_30 + fruit_freq + green_veg_freq + exercise_30 + age5yr_bucket, bal_hrt_attack_training)
 
 # Summarize the results
 summary(heart_attack_fit2)
@@ -974,7 +974,7 @@ plot(heart_attack_fit2, uniform = TRUE, main="Classification Tree")
 text(heart_attack_fit2, use.n = TRUE, all = TRUE, cex=.8)
 ```
 
-We can see that the variables in order of importance for determining heart attack are: angina, employment_status, gen_health, and high_bp.  Many of the predictor variables are ignored as part of the tree function because their contributions to the model are very insignificant
+We can see that the variables in order of importance for determining heart attack are: angina, employment_status, and gen_health.  Many of the predictor variables are ignored as part of the tree function because their contributions to the model are very insignificant
 
 After creating the above tree, we want to assess how it classifies our training cases.  To do so, we will create a confusion matrix and assess metrics like accuracy, precision, and recall.
 
