@@ -924,13 +924,10 @@ set.seed(1)
 balanced_hrt_attack_sample <- sample(2, nrow(balanced_brfss), replace=TRUE, prob=c(0.70, 0.30))
 
 # select columns x-y as predictor variables for test/train outputs
-bal_hrt_attack_training <- balanced_brfss[balanced_hrt_attack_sample==1, c('heart_attack', 'state', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
+bal_hrt_attack_training <- balanced_brfss[balanced_hrt_attack_sample==1, c('heart_attack', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income',  'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
 
-bal_hrt_attack_test <- balanced_brfss[balanced_hrt_attack_sample==2, c('heart_attack', 'state', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income', 'weight', 'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
+bal_hrt_attack_test <- balanced_brfss[balanced_hrt_attack_sample==2, c('heart_attack', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income',  'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
 
-# create output variable for heart attack
-# heart_attack.trainLabels <- brfss_complete[heart_attack_sample==1, 'heart_attack']
-# heart_attack.testLabels <- brfss_complete[heart_attack_sample==2, 'heart_attack']
 ```
 
 ### Decision Trees
@@ -940,7 +937,7 @@ First, we construct a classification tree using all variables as predictors exce
 ```{r}
 # decision trees
 loadPkg('tree')
-heart_attack_fit2 <- tree(heart_attack ~ gen_health + mental_health + health_coverage + sleep_time + high_bp + time_since_cholcheck + angina + stroke + asthma + depression + kidney_disease + diabetes + veteran + marital_status + education_level + employment_status + income + weight + sex + difficulty_walk + smoke_100 + alc_past_30 + fruit_freq + green_veg_freq + exercise_30 + age5yr_bucket, bal_hrt_attack_training)
+heart_attack_fit2 <- tree(heart_attack ~ gen_health + mental_health + health_coverage + sleep_time + high_bp + time_since_cholcheck + angina + stroke + asthma + depression + kidney_disease + diabetes + veteran + marital_status + education_level + employment_status + income + sex + difficulty_walk + smoke_100 + alc_past_30 + fruit_freq + green_veg_freq + exercise_30 + age5yr_bucket, bal_hrt_attack_training)
 
 summary(heart_attack_fit2)
 
@@ -952,23 +949,39 @@ We can see that the variables in order of importance for determining heart attac
 
 After creating the above tree, we want to assess how it classifies our training cases.  To do so, we will create a confusion matrix and assess metrics like accuracy, precision, and recall.
 
-```{r, include=T}
- 
-cm = confusionMatrix( predict(heart_attack_fit2, type = "class"), reference = bal_hrt_attack_training[, "heart_attack"] )
-print('Overall: ')
-cm$overall
-print('Class: ')
-cm$byClass
-```
 
 We now look at a confusion matrix to see how well the tree classifies our test cases.  We also have calculated accuracy below.  We can see that our first decision tree classified the test cases with 77.6% accuracy.  
 
 ```{r}
+# Validate Model using decision trees 
 tree.pred = predict(heart_attack_fit2, bal_hrt_attack_test, type = "class")
+
+# Compute the confusion matrix
 cmm = table(tree.pred, bal_hrt_attack_test$heart_attack)
-cmm
-accuracy = (cmm[[1]] + cmm[[4]])/sum(cmm)
-accuracy
+
+# Compute the accuracy from the confusion matrix
+accuracy.dec = (cmm[[1]] + cmm[[4]])/sum(cmm)
+accuracy.dec
+
+# Compute the sensitivity from confusion matrix
+sensitivity.dec = cmm[[1]]/(cmm[[1]] + cmm[[2]])
+sensitivity.dec
+
+# Compute the specificity from confusion matrix
+specificity.dec = cmm[[4]]/(cmm[[3]] + cmm[[4]])
+specificity.dec
+
+# Compute the precision from confusion matrix
+precision.dec = cmm[[1]]/(cmm[[1]] + cmm[[3]])
+precision.dec
+
+# Compute the recall from confusion matrix
+recall.dec = cmm[[1]]/(cmm[[1]] + cmm[[2]])
+recall.dec
+
+# Compute the F1 Score from precision and recall
+f1score.dec = 2 * ((precision.dec * recall.dec)/(precision.dec + recall.dec))
+f1score.dec
 ```
 
 Next we will perform some cross validation to decide if our tree would benefit from any pruning.
@@ -987,24 +1000,47 @@ Next we attempt to perform bagging.  This involves using all predictor variables
 loadPkg('randomForest')
 
 #bal_hrt_attack_training <- subset(bal_hrt_attack_training, select = -c(weight, state))
-#bag.heart_attack = randomForest(heart_attack~., data=bal_hrt_attack_training, mtry=26, importance= TRUE)
+bag.heart_attack = randomForest(heart_attack~., data=bal_hrt_attack_training, mtry=25, importance= TRUE)
 bag.heart_attack
 ```
 
 We can see that the performance of the bagged tree performed with slightly better accuracy.
 
 ```{r}
+# Validate bagged tree model
 tree.pred_bagged = predict(bag.heart_attack, bal_hrt_attack_test, type = "class")
+
+# Compute confusion matrix
 cmm1 = table(tree.pred_bagged, bal_hrt_attack_test$heart_attack)
-cmm1
-accuracy1 = (cmm1[[1]] + cmm1[[4]])/sum(cmm1)
-accuracy1
+
+# Compute the accuracy from confusion matrix
+accuracy.bag = (cmm1[[1]] + cmm1[[4]])/sum(cmm1)
+accuracy.bag
+
+# Compute the sensitivity from confusion matrix
+sensitivity.bag = cmm1[[1]]/(cmm1[[1]] + cmm1[[2]])
+sensitivity.bag
+
+# Compute the specificity from confusion matrix
+specificity.bag = cmm1[[4]]/(cmm1[[3]] + cmm1[[4]])
+specificity.bag
+
+# Compute the precision from confusion matrix
+precision.bag = cmm1[[1]]/(cmm1[[1]] + cmm1[[3]])
+precision.bag
+
+# Compute the recall from confusion matrix
+recall.bag = cmm1[[1]]/(cmm1[[1]] + cmm1[[2]])
+recall.bag
+
+# Compute the F1 Score from precision and recall
+f1score.bag = 2 * ((precision.bag * recall.bag)/(precision.bag + recall.bag))
+f1score.bag
 ```
 
 Next we will look at random forest and see if we can get even better accuracy.
 
 ```{r}
-#bal_hrt_attack_training <- subset(bal_hrt_attack_training, select = -c(weight, state))
 randForest.heart_attack = randomForest(heart_attack~., data=bal_hrt_attack_training, mtry=2, importance= TRUE)
 randForest.heart_attack
 ```
@@ -1012,11 +1048,35 @@ randForest.heart_attack
 The confusion matrix and accuracy for the random forest is given below.
 
 ```{r}
+# Validate randdom Forest tree model 
 tree.pred_randForest = predict(randForest.heart_attack, bal_hrt_attack_test, type = "class")
+
+# Compute confusion matrix
 cmm2 = table(tree.pred_randForest, bal_hrt_attack_test$heart_attack)
-cmm2
-accuracy2 = (cmm2[[1]] + cmm2[[4]])/sum(cmm2)
-accuracy2
+
+# Compute accuracy from confusion
+accuracy.randT = (cmm2[[1]] + cmm2[[4]])/sum(cmm2)
+accuracy.randT
+
+# Compute the sensitivity from confusion matrix
+sensitivity.randT = cmm2[[1]]/(cmm2[[1]] + cmm2[[2]])
+sensitivity.randT
+
+# Compute the specificity from confusion matrix
+specificity.randT = cmm2[[4]]/(cmm2[[3]] + cmm2[[4]])
+specificity.randT
+
+# Compute the precision from confusion matrix
+precision.randT = cmm2[[1]]/(cmm2[[1]] + cmm2[[3]])
+precision.randT
+
+# Compute the recall from confusion matrix
+recall.randT = cmm2[[1]]/(cmm2[[1]] + cmm2[[2]])
+recall.randT
+
+# Compute the F1 Score from precision and recall
+f1score.randT = 2 * ((precision.randT * recall.randT)/(precision.randT + recall.randT))
+f1score.randT
 ```
 
 ### Logistic Regression
@@ -1054,7 +1114,7 @@ heart_attackLogitHoslem = hoslem.test(bal_hrt_attack_training$heart_attack, fitt
 heart_attackLogitHoslem
 ```
   
-According to the Hosmer and Lemeshow Goodness of Fit test using the training dataset, the p value is `r admitLogitHoslem$p.value`. This is very small so it means that this model is a good fit.  
+According to the Hosmer and Lemeshow Goodness of Fit test using the training dataset, the p value is `r heart_attackLogitHoslem$p.value`. This is very small so it means that this model is a good fit.  
   
   
 McFadden test:    
@@ -1101,23 +1161,41 @@ Create confusion matrix from logistic regression output
 
 # confusion matrix for test
 cmlog = table(bal_hrt_attack_test$heart_attack, prob2 > .5)
-cmlog
 
-testSensitivity <- 1573 / (4187 + 1573)
-testSpecificity <- 953 / (953 + 4803)
-testPrecision <- 1573 / (1573 + 4803)
-testAccuracy <- X
+# Compute accuracy from confusion
+accuracy.logit = (cmlog[[1]] + cmlog[[4]])/sum(cmlog)
+accuracy.logit
+
+# Compute the sensitivity from confusion matrix
+sensitivity.logit = cmlog[[1]]/(cmlog[[1]] + cmlog[[2]])
+sensitivity.logit
+
+# Compute the specificity from confusion matrix
+specificity.logit = cmlog[[4]]/(cmlog[[3]] + cmlog[[4]])
+specificity.logit
+
+# Compute the precision from confusion matrix
+precision.logit = cmlog[[1]]/(cmlog[[1]] + cmlog[[3]])
+precision.logit
+
+# Compute the recall from confusion matrix
+recall.logit = cmlog[[1]]/(cmlog[[1]] + cmlog[[2]])
+recall.logit
+
+# Compute the F1 Score from precision and recall
+f1score.logit = 2 * ((precision.logit * recall.logit)/(precision.logit + recall.logit))
+f1score.logit
 ```
   
   
-## Comparisons Between Models   
+## Model Evaluation   
   
 
 Statistic              | Logistic Regression | Classification Tree | Bagged Tree | Random Forrest |
 -----------------------|---------------------|---------------------|-------------|----------------|
-AUC                    | `r auc(h)`          |                     |             |                |
-Precision              | `r testPrecision`   |                     |             |                |
-Accuracy               | `r `                |                     |             |                |
-Specificity            | `r testSpecificity` |                     |             |                | 
-Sensitivity/Recall     | `r testSensitivity` |                     |             |                |  
-F1 Score               | `r `                |                     |             |                | 
+Accuracy               | `r accuracy.logit`    | `r accuracy.dec`    |`r accuracy.bag`| `r accuracy.randT`  |
+Specificity            | `r specificity.logit` | `r specificity.dec` |`r specificity.bag`           | `r specificity.randT` | 
+Sensitivity            | `r sensitivity.logit` | `r sensitivity.dec` |`r sensitivity.bag`           | `r sensitivity.randT` |  
+Precision              | `r precision.logit`   | `r precision.dec`   |`r precision.bag`             | `r precision.randT`   |
+Recall                 | `r recall.logit`      | `r recall.dec`      |`r recall.bag` | `r recall.randT`                |
+F1 Score               | `r f1score.logit`     | `r f1score.dec`     |`r f1score.bag`| `r f1score.randT`               | 
