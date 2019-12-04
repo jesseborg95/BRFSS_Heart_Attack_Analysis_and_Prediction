@@ -184,6 +184,13 @@ Inspect the structure of the dataframe with changed variables
 str(brfss_complete)
 ```
 
+Save the cleaned file as a New File
+
+```{r}
+# Save brfss_complete to a file
+save(brfss_complete, file = "brfss_cleaned.RData")
+```
+
 ## Exploratory Data Analysis
 
 This part will be the EDA of our analysis, which will help visualize the data better and help draw some early conclusions. This will serve as a good base for when the model analysis is carried out.
