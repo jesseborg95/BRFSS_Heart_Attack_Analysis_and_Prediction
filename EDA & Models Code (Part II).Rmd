@@ -522,6 +522,22 @@ ggplot(brfss_complete, aes(x = exercise_30, fill = age5yr_bucket)) +
         scale_fill_manual(values=plasma(13))
 ```
 
+Look at the ratio of heart attacks depending on whether participants have exercised in the past 30 days products or not.
+  
+```{r}
+# Visualize ratio of heart attacks if exercised in past 30 days
+ggplot(brfss_complete, aes(x = exercise_30, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Ratio of Heart Attacks if Participant Has Exercised in the Past 30 Days or Not') +
+        ylab('Total') +
+        xlab('Exercised in the Past 30 Days?') +
+        scale_x_discrete(labels= c('Yes', 'No')) +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
 <br></br>
 
 Finally for the EDA, look at how diabetes, employment status, income, weight and sex affects heart attack. To do this we will see which ratio of participants have diabetes and which ratio have had heart attacks. We will also look at how employment, income and weight differs with the amount of participants who have suffered heart attacks. Finally we will see if male or female participants suffer more from heart attacks.

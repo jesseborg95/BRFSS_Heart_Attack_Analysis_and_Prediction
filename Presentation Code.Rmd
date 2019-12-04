@@ -196,6 +196,22 @@ ggplot(brfss_complete, aes(x = exercise_30, fill = age5yr_bucket)) +
         scale_fill_manual(values=plasma(13))
 ```
 
+Graph showing the ratio of heart attacks depending on whether participants have exercised in the past 30 days products or not.
+  
+```{r}
+# Visualize ratio of heart attacks if exercised in past 30 days
+ggplot(brfss_complete, aes(x = exercise_30, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Ratio of Heart Attacks if Participant Has Exercised in the Past 30 Days or Not') +
+        ylab('Total') +
+        xlab('Exercised in the Past 30 Days?') +
+        scale_x_discrete(labels= c('Yes', 'No')) +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
 Graph showing the ratio of heart attacks depending on the participants' employment status.
 
 ```{r}
