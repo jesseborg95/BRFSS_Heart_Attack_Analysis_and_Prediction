@@ -241,6 +241,21 @@ ggplot(brfss_complete, aes(x = sex, fill = heart_attack)) +
         theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
 ```
 
+Graph showing how the porportion of heart attacks vary depending on whether the participants have high blood pressure or not.
+
+```{r heart attacks based on high blood pressure}
+#Visualize proportion of respondents with heart attacks by high_bp
+ggplot(brfss_complete, aes(x = high_bp, fill = heart_attack)) +
+        geom_bar() + 
+        ggtitle('Heart attacks among people with and without high blood pressure') +
+        ylab('Total') +
+        scale_x_discrete(labels= c('Yes', 'No')) +
+        theme_bw() +
+        theme(plot.title = element_text(hjust = 0.5)) + 
+        theme(axis.text.x = element_text(size = 11, color = 'black')) +
+        theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
 ## Hypothesis Testing
 
 Before the models are built, some hypothesis testing will be carried out to see which variables are dependent or independent from the heart attacks.
