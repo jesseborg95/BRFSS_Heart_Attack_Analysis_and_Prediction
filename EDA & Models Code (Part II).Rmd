@@ -199,27 +199,10 @@ This part will be the EDA of our analysis, which will help visualize the data be
 
 Start by looking at the general number of heart attacks in the US and how this changes by state. First the data must be cleaned before it is plotted as a heat map.
 
-```{r states and heart attack data}
-#Making dataframe for visualizing heart attacks per state
-#Notice that in order to add up the number of heart attacks, i convert the factor to a string and then an integer
-
-state_map_df <- brfss_complete %>% select(state, heart_attack) %>% mutate(state = as.character(state)) %>% group_by(state) %>% summarise(sum_ = sum(as.numeric(as.character(heart_attack)))) %>% filter(state != c('District of Columbia', 'Puerto Rico', 'Guam'))
-```
-
-```{r states and heart map}
-#Map showing number of heart attacks per state
-
-plot_usmap(data = state_map_df, values = "sum_", color = "white") + 
-  scale_fill_continuous(name = "Heart Attack Count", label = scales::comma) + 
-  labs(title = 'Number of Heart Attacks per State') +
-  theme(legend.position = "right")
-```
-
-We also want to look at the number of participants by US state.
-
 ```{r states and participants data}
 #Make dataframe showing number of survey particpants by state
 participants_map_df <-  brfss_complete %>% group_by(state) %>% summarise(n = n())
+participants_map_df <- participants_map_df[-c(52, 53), ]
 ```
 
 ```{r states and respondents}
@@ -228,6 +211,26 @@ plot_usmap(data = participants_map_df, values = "n", color = "white") +
   scale_fill_continuous(name = "Survey Participants by State", label = scales::comma) + 
   labs(title = 'Number of Survey Participants per State') +
   theme(legend.position = "right") 
+```
+
+```{r states and heart attack data}
+#Making dataframe for visualizing heart attacks per state
+#Notice that in order to add up the number of heart attacks, i convert the factor to a string and then an integer
+state_map_df <- brfss_complete %>% select(state, heart_attack) %>% mutate(state = as.character(state)) %>% group_by(state) %>% summarise(sum_ = sum(as.numeric(as.character(heart_attack)))) %>% filter(state != c('District of Columbia', 'Puerto Rico', 'Guam'))
+
+# Create the percentage of heart attacks to participants
+ratios <- (state_map_df$sum_ * 100)/ participants_map_df$n
+ratio_df <- data.frame(state_map_df$state, ratios)
+names(ratio_df) <- c("state", 'ratio')
+```
+
+```{r states and heart map}
+#Map showing number of heart attacks per state as a percentage of participants
+
+plot_usmap(data = ratio_df, values = "ratio", color = "white") + 
+  scale_fill_continuous(name = "Heart Attack Ratio", label = scales::comma) + 
+  labs(title = 'Ratio of Heart Attacks to Participants per State') +
+  theme(legend.position = "right")
 ```
 
 Look at how the porportion of heart attacks vary depending on the general health of the participants. 
