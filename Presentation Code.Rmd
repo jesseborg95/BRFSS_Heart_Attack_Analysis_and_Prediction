@@ -38,7 +38,7 @@ loadPkg('car')
 
 ```{r load-data}
 # Load the RData dataset
-load("brfss_cleaned.RData")
+load("brfss_complete.RData")
 ```
 
 ```{r}

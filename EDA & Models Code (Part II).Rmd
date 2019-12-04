@@ -188,7 +188,7 @@ Save the cleaned file as a New File
 
 ```{r}
 # Save brfss_complete to a file
-save(brfss_complete, file = "brfss_cleaned.RData")
+save(brfss_complete, file = "brfss_complete.RData")
 ```
 
 ## Exploratory Data Analysis
