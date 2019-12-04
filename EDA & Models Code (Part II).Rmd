@@ -1171,7 +1171,7 @@ Statistic              | Logistic Regression | Classification Tree | Bagged Tree
 -----------------------|---------------------|---------------------|-------------|----------------|
 AUC                    | `r auc(j)`          |                     |             |                |
 Precision              | `r testPrecision`   |                     |             |                |
-Accuracy               | `r test Accuracy`   |                     |             |                |
+Accuracy               | `r testAccuracy`    |                     |             |                |
 Specificity            | `r testSpecificity` |                     |             |                | 
 Sensitivity/Recall     | `r testSensitivity` |                     |             |                |  
 F1 Score               | `r testF1`          |                     |             |                | 
