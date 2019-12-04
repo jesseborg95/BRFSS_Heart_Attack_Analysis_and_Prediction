@@ -24,7 +24,7 @@ loadPkg = function(x) { if (!require(x,character.only=T, quietly =T)) { install.
 
 For project two, our group used the Behavior Risk Factor Surveillance System (BRFSS) data from the 2013 survey. This data is collected by the CDC from all 50 states via landline phone and cellular phone covering a variety of health related topics. Generalizability is limited to those in the population with access to a landline or cell phone as well as to those living in a private residence or college housing. These factors leave out individuals and households who fall outside of these conditions, which means that random sampling is not fully taking place. Sampling bias occurs in the form of non-response, indicated by the NA/null points that exist in the dataset.
 
-Our goal is to analyze factors that we believe may be related to heart attacks. We will not assume causality in the EDA portion of our project. We will spend time in it exploring relationships between these variables. After this, we will build and analyze the effectiveness of building two models as they relate to classifying and possibly predicting the occurence of a heart attack in an individual. We will utilize the decision tree method for classification and logistic regression for prediction. We selected these methods because our data includes both categorica and numeric variables and needed flexible methods to be able to work with both types.  
+Our goal is to analyze factors that we believe may be related to heart attacks. We will not assume causality in the EDA portion of our project. We will spend time in it exploring relationships between these variables. After this, we will build and analyze the effectiveness of building two models as they relate to classifying and possibly predicting the occurence of a heart attack in an individual. We will utilize the decision tree method for classification and logistic regression for prediction. We selected these methods because our data includes both categorical and numeric variables and needed flexible methods to be able to work with both types.  
   
 This file contains the full code we developed for the project and will be used to then write up the summary report.
 <br></br>
@@ -1170,6 +1170,7 @@ testAccuracy <- (1573 + 953) / (4187 + 1573 + 953 + 4803)
 
 # F1 score
 testF1 <- 2 * testPrecision * testSensitivity / (testPrecision + testSensitivity)
+
 ```
   
 ## Comparisons Between Models   
