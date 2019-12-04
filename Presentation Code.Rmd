@@ -47,16 +47,15 @@ Plot showing the number of participants by state:
 
 ```{r states and participants data}
 #Make dataframe showing number of survey particpants by state
-participants_map_df <- participants_map_df[-c(52, 53), ]
 participants_map_df <-  brfss_complete %>% group_by(state) %>% summarise(n = n())
 ```
 
 ```{r states and respondents}
 #Visualize map of number of participants per state
 plot_usmap(data = participants_map_df, values = "n", color = "white") + 
-  scale_fill_continuous(name = "Survey Participants by State", label = scales::comma) + 
-  labs(title = 'Number of Survey Participants per State') +
-  theme(legend.position = "right") 
+scale_fill_continuous(name = "Survey Participants by State", label = scales::comma) + 
+labs(title = 'Number of Survey Participants per State') +
+theme(legend.position = "right") 
 ```
 
 Plot percentage of heart attacks to participants by state
@@ -65,6 +64,7 @@ Plot percentage of heart attacks to participants by state
 #Making dataframe for visualizing heart attacks per state
 #Notice that in order to add up the number of heart attacks, i convert the factor to a string and then an integer
 state_map_df <- brfss_complete %>% select(state, heart_attack) %>% mutate(state = as.character(state)) %>% group_by(state) %>% summarise(sum_ = sum(as.numeric(as.character(heart_attack)))) %>% filter(state != c('District of Columbia', 'Puerto Rico', 'Guam'))
+participants_map_df <- participants_map_df[-c(52, 53), ]
 
 # Create the percentage of heart attacks to participants
 ratios <- (state_map_df$sum_ * 100)/ participants_map_df$n
