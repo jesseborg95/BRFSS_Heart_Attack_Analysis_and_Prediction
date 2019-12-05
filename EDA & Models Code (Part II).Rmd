@@ -1087,6 +1087,7 @@ f1score.bag
 Next we will look at random forest and see if we can get even better accuracy.
 
 ```{r}
+# perform random forest modelling 
 randForest.heart_attack = randomForest(heart_attack~., data=bal_hrt_attack_training, mtry=2, importance= TRUE)
 randForest.heart_attack
 ```
@@ -1213,8 +1214,6 @@ The the area-under-curve is `r auc(j)` which is also above .8, meaning that this
 Create confusion matrix from logistic regression output  
 
 ```{r cm}
-# VIF analysis
-# vif(heart_attack_logit1)
 
 # confusion matrix for test
 cmlog = table(bal_hrt_attack_test$heart_attack, prob2 > .5)
