@@ -205,6 +205,8 @@ ggplot(brfss_complete, aes(x = gen_health, fill = heart_attack)) +
         geom_bar() + 
         ggtitle('Heart attack among levels of general health') +
         ylab('Total') +
+        xlab('General Health') +
+        scale_fill_discrete(name = "Heart Attack?") +
         theme_bw() +
         theme(plot.title = element_text(hjust = 0.5)) + 
         theme(axis.text.x = element_text(size = 11, color = 'black')) +
@@ -280,6 +282,7 @@ ggplot(brfss_complete, aes(x=age5yr_bucket, y=time_since_cholcheck, color = hear
   ggtitle('Ratio of Heart Attacks by Time Since Cholesterol Check and 5 Year Age') +
   ylab('Time Since Cholesterol Check') +
   xlab('Age (5 Year Bucket)') +
+  labs(color="Heart Attack?") +
   theme_bw() +
   theme(plot.title = element_text(hjust = 0.5)) +
   theme(axis.text.x = element_text(angle = 60, hjust = 1, color = 'black')) +
@@ -296,6 +299,8 @@ ggplot(brfss_complete, aes(x = angina)) + geom_bar(aes(fill = heart_attack)) +
        ggtitle('Ratio of Heart Attacks if Participant Has Suffered from Angina or Not') +
        ylab('Count') +
        xlab('Suffered Angina?') +
+       scale_x_discrete(labels= c('Yes', 'No')) +
+       scale_fill_discrete(name = "Heart Attack?") +
        theme_bw() +
        theme(plot.title = element_text(hjust = 0.5)) +
        theme(axis.text.x = element_text(size = 11, color = 'black')) +
@@ -318,7 +323,7 @@ ggplot(brfss_complete, aes(x = exercise_30, fill = age5yr_bucket)) +
         theme(plot.title = element_text(hjust = 0.5)) + 
         theme(axis.text.x = element_text(size = 11, color = 'black')) +
         theme(panel.border = element_blank(), panel.grid.major = element_blank(), panel.grid.minor = element_blank()) +
-        scale_fill_manual(values=plasma(13))
+        scale_fill_manual(values=plasma(13), name = "Age Bucket (5 Years)")
 ```
 
 Graph showing the ratio of heart attacks depending on whether participants have exercised in the past 30 days products or not.
@@ -331,6 +336,7 @@ ggplot(brfss_complete, aes(x = exercise_30, fill = heart_attack)) +
         ylab('Total') +
         xlab('Exercised in the Past 30 Days?') +
         scale_x_discrete(labels= c('Yes', 'No')) +
+        scale_fill_discrete(name = "Heart Attack?") +
         theme_bw() +
         theme(plot.title = element_text(hjust = 0.5)) + 
         theme(axis.text.x = element_text(size = 11, color = 'black')) +
@@ -348,6 +354,7 @@ ggplot(brfss_complete, aes(x = employment_status, fill = heart_attack)) +
         ggtitle('Number of Participants With Heart Attacks by Employment Status ') +
         ylab('Total') +
         xlab('Employment Status') +
+        scale_fill_discrete(name = "Heart Attack?") +
         theme_bw() +
         theme(plot.title = element_text(hjust = 0.5)) + 
         theme(axis.text.x = element_text(angle = 60, hjust = 1, size = 10, color = 'black')) +
@@ -365,6 +372,7 @@ ggplot(brfss_complete, aes(x = income, fill = heart_attack)) +
         ggtitle('Number of Participants With Heart Attacks by Annual Income') +
         ylab('Total') +
         xlab('Annual Income') +
+        scale_fill_discrete(name = "Heart Attack?") +
         theme_bw() +
         theme(plot.title = element_text(hjust = 0.5)) + 
         theme(axis.text.x = element_text(angle = 60, hjust = 1, size = 10, color = 'black')) +
@@ -382,6 +390,7 @@ ggplot(brfss_complete, aes(x = sex, fill = heart_attack)) +
         ggtitle('Number pf Participants With Heart Attacks by Gender') +
         ylab('Total') +
         xlab('Gender') +
+        scale_fill_discrete(name = "Heart Attack?") +
         theme_bw() +
         theme(plot.title = element_text(hjust = 0.5)) + 
         theme(axis.text.x = element_text(size = 11, color = 'black')) +
@@ -398,7 +407,9 @@ ggplot(brfss_complete, aes(x = high_bp, fill = heart_attack)) +
         geom_bar() + 
         ggtitle('Heart attacks among people with and without high blood pressure') +
         ylab('Total') +
+        xlab('High Blood Pressure?') +
         scale_x_discrete(labels= c('Yes', 'No')) +
+        scale_fill_discrete(name = "Heart Attack?") +
         theme_bw() +
         theme(plot.title = element_text(hjust = 0.5)) + 
         theme(axis.text.x = element_text(size = 11, color = 'black')) +
