@@ -542,9 +542,9 @@ bal_hrt_attack_training <- balanced_brfss[balanced_hrt_attack_sample==1, c('hear
 bal_hrt_attack_test <- balanced_brfss[balanced_hrt_attack_sample==2, c('heart_attack', 'gen_health', 'mental_health', 'health_coverage', 'sleep_time', 'high_bp', 'time_since_cholcheck', 'angina', 'stroke', 'asthma', 'depression', 'kidney_disease', 'diabetes', 'veteran', 'marital_status', 'education_level', 'employment_status', 'income',  'sex', 'difficulty_walk', 'smoke_100', 'alc_past_30', 'fruit_freq', 'green_veg_freq', 'exercise_30', 'age5yr_bucket')]
 ```
 
-### 5.2 Decision Trees
+### 5.2 SMART Question: Which variables are the most important variables for determining a heart attacks and which models provide the greatest accuracy for this prediction?
 
-#### 5.2.1 SMART Question: Which variables are the most important variables for determining a heart attacks and which models provide the greatest accuracy for this prediction?
+#### 5.2.1 Decision Trees
 
 First, we construct a classification tree using all variables as predictors except smokeless_tabac (excluded as a result of chi-square tests), state, and month. We are using our balanced training data for creation of the tree.
 
@@ -632,6 +632,8 @@ Number of Splits    |     Deviation Score    |
 
 Based on the cross validation, we can see that the optimal number of splits for the tree are either 5 or 4.  Because of these results, we will keep our original tree with four splits, as pruning the tree would provide no benefit.
 
+#### 5.2.2 Bagged Tree
+
 Next we attempt to perform bagging. This involves using all predictor variables to make a whole bunch of trees. Using more than one tree will hopefully increase model performance.
 
 ```{r, include = F}
@@ -685,6 +687,8 @@ Specificity           |         0.8104587      |
 Precision             |         0.8036357      |
 Recall                |         0.7751736      |
 F1 Score              |         0.7891481      |
+
+#### 5.2.3 Random Forest
 
 Next we will look at random forest and see if we can get even better accuracy.
 
@@ -741,7 +745,7 @@ F1 Score              |         0.8032674     |
 
 Now that the different tree models have been explored, logistic regression will be carried out.
 
-#### 5.3.1 SMART Question:
+#### 5.3.1 SMART Question: Does Using Logistic Regression Yield Better Model Performance Than Decision Trees?
 
 The key variables identified in trees in order of significance: agina, employment status, gen health, high bp. These are the variables which will be used in the logistic regression model using the forward selection method. The backward selection method was attempted, but since there are so many variables, the model takes too long or just wont run all together. We decided it would be more sensible to go with the forward selection method using the most important variables as determined by the trees. 
 
