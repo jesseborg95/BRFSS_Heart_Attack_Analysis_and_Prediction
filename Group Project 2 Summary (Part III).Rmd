@@ -918,7 +918,13 @@ Overall, the predictive models for heart attack had good prediction eerformance 
 
 ## 7. Conclusion & Key Takeaways
 
+In this study, we built predictive models for heart attack using multiple machine learning algorithms, including logistic regression, decision tree, bagged tree, and random forest. By comparing their prediction performance on the test data set, our predictive models showed similar performance in predicting heart attack in terms of sensitivity, specificity, precision, recall and accuracy. However, the random forest prediction model had the highest accuracy while the Logistic regression model had the highest sensitivity (recall). 
 
+Our statistical analysis earlier reported risk factors and also identified agina, general health, employment status, and high blood pressure as potential risk factors related to heart attack, with angina being the significantly most important predictor.
+
+An important limitation of our study is that BRFSS data were self-reported and subject to recall bias that could affect the performance of our predictive models. In the event that we have clinical data, we may experience better performance with our models for predicting heart attack.
+
+Our models and findings can find application in early detention as well as prevention of heart attacks for the demography under study.
 
 
 ## References
