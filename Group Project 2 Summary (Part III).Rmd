@@ -910,7 +910,9 @@ F1 Score               | `r f1score.logit`     | `r f1score.dec`     |`r f1score
 
 We observed the range for accuracy across all four models is 77.6% - 80.13%. The Random Forest Model produced the highest accuracy (80.13%) while the Classification Tree had the least accuracy (77.6%). 
 
+However, in a classification task like predicting heart attack (and most health related cases), it is important to look beyond accuracy in selecting the best model. The recall is an important metric since it measures heart attack predictions identified correctly which is desirable, because we do not want to give a wrong prediction for patients using the our model. The logistic regression model as well as the Random Forrest Model gives the highest values for recall of 81.45% and 81.09% respectively.
 
+Overall, the predictive models for heart attack had good prediction eerformance with only slight differences.
 
 <br></br>
 
