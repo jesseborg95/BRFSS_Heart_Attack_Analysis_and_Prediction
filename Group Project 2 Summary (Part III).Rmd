@@ -883,12 +883,6 @@ F1 Score              |         0.7682569   |
 
 Once all the models were carried out, a comparison was done between the models to determine which is the best model to use when predicting the occurance of a heart attack.
 
-
-
-### 6.1 SMART Question: What model had the best performance for predicting heart attacks?
-
-The table below shows the results for different performance metrics when our models were evaluated using the test data from the previous section.
-  
 However, before we delve into evaluating the model, we will briefly define the metrics for which our models will be evaluated. 
 
 1. Accuracy: This is the fraction of heart attack predictions our model got right
@@ -898,6 +892,11 @@ However, before we delve into evaluating the model, we will briefly define the m
 3. Recall: This is the fraction of actual postives i.e. heart attack predictions identified correctly. It is also the sensitivity of the model
 
 4. F1 Score: This is a harmonic mean of precision and recall
+
+
+### 6.1 SMART Question: What model had the best performance for predicting heart attacks?
+
+The table below shows the results for different performance metrics when our models were evaluated using the test data from the previous section.
   
   
 Metric                 | Logistic Regression | Classification Tree | Bagged Tree | Random Forest |
