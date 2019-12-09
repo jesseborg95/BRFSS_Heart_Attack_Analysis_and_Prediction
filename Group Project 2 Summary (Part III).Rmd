@@ -747,9 +747,10 @@ Now that the different tree models have been explored, logistic regression will 
 
 #### 5.3.1 SMART Question: Does Using Logistic Regression Yield Better Model Performance Than Decision Trees?
 
-The key variables identified in trees in order of significance: agina, employment status, gen health, high bp. These are the variables which will be used in the logistic regression model using the forward selection method. The backward selection method was attempted, but since there are so many variables, the model takes too long or just wont run all together. We decided it would be more sensible to go with the forward selection method using the most important variables as determined by the trees. 
+The key variables identified in trees in order of significance: angina, employment status, general health, and high blood pressure. These are the variables which will be used in the logistic regression model. The backward selection method was attempted, but since there are so many variables, the model takes too long or just won't run all together. Furthermore, we decided it would be more sensible to use the variables determined in the tree section as opposed to forward selection, so we would not just be randomly selecting variables to model. We wanted to take a more strategic approach.
 
-Below are the results for the logistic regression model:
+Below are the results for the logistic regression model:  
+  - All p values are small, meaning that each variable (as well as each factor level) is a significant predictor
 
 ```{r}
 # logistic regression
@@ -762,15 +763,19 @@ heart_attack_logit1 <- glm(heart_attack ~ angina + employment_status + gen_healt
 
 summary(heart_attack_logit1)
 ```
+
   
-Growth/decay factors for each explanatory variable (calculated as exponentials of the model coefficients):
+  
+Growth/decay factors for each explanatory variable (calculated as exponentials of the model coefficients):  
+  - Each variable's exponential coefficients are greater than 0, meaning that they are all growth factors  
+  - Angina has by far the highest growth factor at 17.54  
 
 ```{r growthDecayFactors, results='markup', collapse=F}
 # Calculate the exponentials
 exp(coef(heart_attack_logit1))
 ```
   
-Confidence intervals of each coefficient of the model:
+Confidence intervals for the 95% threshold of each coefficient of the model:
 
 ```{r ConfInt, results='markup', collapse=F}
 # CIs using standard errors
