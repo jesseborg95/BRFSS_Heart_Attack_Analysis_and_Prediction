@@ -111,7 +111,7 @@ brfss_reduced_drops <- subset(brfss_reduced, select = -c(dr_visits_year, prediab
 brfss_complete <- na.omit(brfss_reduced_drops)
 ```
 
-After the variables with too many NA values were dropped, there are 31 variables left. Their descriptions can be found below:
+After the variables with too many NA values were dropped, there were 31 variables left. Their descriptions can be found below:
 
 * **state** - State Fips Code
 * **month** - File Month
@@ -501,7 +501,7 @@ Based on the table above, we reject the null hypothesis for all variables except
 
 <br></br>
 
-## 5. Modeling
+## 5. Model Building
 
 After carrying out the Chi-Squared Test of Indepence to determine which categorical variables to use in our models, its time to build the models. We started off by using classification trees.
 
@@ -879,15 +879,19 @@ Precision             |         0.7269097   |
 Recall                |         0.8145914   |
 F1 Score              |         0.7682569   |
   
-### 5.4 Model Evaluation
+## 6. Model Evaluation
 
 Once all the models were carried out, a comparison was done between the models to determine which is the best model to use when predicting the occurance of a heart attack.
 
-#### 5.4.1 SMART Question: Which is the best model to use for predicting heart attacks?
 
-The table below shows the values for the different statistics for the different models explored:
+
+### 6.1 SMART Question: What model had the best performance for predicting heart attacks?
+
+The table below shows the results for different performance metrics when our models were evaluated using the test data from the previous section.
   
-Statistic              | Logistic Regression | Classification Tree | Bagged Tree | Random Forrest |
+  
+  
+Metric                 | Logistic Regression | Classification Tree | Bagged Tree | Random Forest |
 -----------------------|---------------------|---------------------|-------------|----------------|
 Accuracy               | `r accuracy.logit`    | `r accuracy.dec`    |`r accuracy.bag`| `r accuracy.randT`  |
 Specificity            | `r specificity.logit` | `r specificity.dec` |`r specificity.bag`           | `r specificity.randT` | 
@@ -896,11 +900,16 @@ Precision              | `r precision.logit`   | `r precision.dec`   |`r precisi
 Recall                 | `r recall.logit`      | `r recall.dec`      |`r recall.bag` | `r recall.randT`                |
 F1 Score               | `r f1score.logit`     | `r f1score.dec`     |`r f1score.bag`| `r f1score.randT`               | 
 
-The table shows that.....
+We observed the range for accuracy across all four models is 77.6% - 80.13%. The Random Forest Model produced the highest accuracy (80.13%) while the Classification Tree had the least accuracy (77.6%). 
+
+
 
 <br></br>
 
-## 6. Conclusion & Key Takeaways
+## 7. Conclusion & Key Takeaways
+
+
+
 
 ## References
 
