@@ -1,7 +1,7 @@
 ---
 title: "DATS6101 Group Project 2: Predicting Heart Attacks"
 author: "Jonathan Giguere, Jesse Borg, Ese Emuraye, Sarah Gates"
-date: "December 8th 2019"
+date: "December 9th 2019"
 output: 
    html_document: 
     toc: yes
@@ -790,7 +790,7 @@ heart_attackLogitHoslem = hoslem.test(bal_hrt_attack_training$heart_attack, fitt
 heart_attackLogitHoslem
 ```
   
-According to the Hosmer and Lemeshow Goodness of Fit test using the training dataset, the p value is `r heart_attackLogitHoslem$p.value`. This is very small so it means that this model is a good fit. Although this test is not very meaningful for models with only factors, it continues to support the other analysis. 
+According to the Hosmer and Lemeshow Goodness of Fit test when using the training dataset, the p value is `r heart_attackLogitHoslem$p.value`. This is very small so it means that this model is a good fit. Although this test is not very meaningful for models with only factors, it continues to support the other analysis. 
 
 McFadden test:
 
@@ -908,23 +908,23 @@ Precision              | `r precision.logit`   | `r precision.dec`   |`r precisi
 Recall                 | `r recall.logit`      | `r recall.dec`      |`r recall.bag` | `r recall.randT`                |
 F1 Score               | `r f1score.logit`     | `r f1score.dec`     |`r f1score.bag`| `r f1score.randT`               | 
 
-We observed the range for accuracy across all four models is 77.6% - 80.13%. The Random Forest Model produced the highest accuracy (80.13%) while the Classification Tree had the least accuracy (77.6%). 
+We observed that the range for accuracy across all four models is 77.6% - 80.13%. The Random Forest Model produced the highest accuracy (80.13%) while the Classification Tree had the least accuracy (77.6%). 
 
-However, in a classification task like predicting heart attack (and most health related cases), it is important to look beyond accuracy in selecting the best model. The recall is an important metric since it measures heart attack predictions identified correctly which is desirable, because we do not want to give a wrong prediction for patients using the our model. The logistic regression model as well as the Random Forrest Model gives the highest values for recall of 81.45% and 81.09% respectively.
+However, in a classification task like predicting heart attacks (and most health related cases), it is important to look beyond accuracy in selecting the best model. The recall is an important metric since it measures heart attack predictions identified correctly which is desirable, because we do not want to give a wrong prediction for patients using the our model. The logistic regression model as well as the Random Forest Model give the highest values for recall of 81.45% and 81.09% respectively.
 
-Overall, the predictive models for heart attack had good prediction eerformance with only slight differences.
+Overall, the predictive models for heart attack had good prediction performance,  with only slight differences.
 
 <br></br>
 
 ## 7. Conclusion & Key Takeaways
 
-In this study, we built predictive models for heart attack using multiple machine learning algorithms, including logistic regression, decision tree, bagged tree, and random forest. By comparing their prediction performance on the test data set, our predictive models showed similar performance in predicting heart attack in terms of sensitivity, specificity, precision, recall and accuracy. However, the random forest prediction model had the highest accuracy while the Logistic regression model had the highest sensitivity (recall). 
+In this study, we built predictive models for heart attacks using multiple machine learning algorithms; including logistic regression, decision tree, bagged tree, and random forest. By comparing their prediction performance on the test data set, our predictive models showed similar performance in predicting heart attack in terms of sensitivity, specificity, precision, recall and accuracy. However, the random forest prediction model had the highest accuracy while the Logistic regression model had the highest sensitivity (recall). 
 
 Our statistical analysis earlier reported risk factors and also identified agina, general health, employment status, and high blood pressure as potential risk factors related to heart attack, with angina being the significantly most important predictor.
 
-An important limitation of our study is that BRFSS data were self-reported and subject to recall bias that could affect the performance of our predictive models. In the event that we have clinical data, we may experience better performance with our models for predicting heart attack.
+An important limitation of our study is that the BRFSS data was self-reported and subject to recall bias that could affect the performance of our predictive models. In the event that we have clinical data, we may experience better performance with our models for predicting heart attack.
 
-Our models and findings can find application in early detention as well as prevention of heart attacks for the demography under study.
+Our models and findings can find application in early detection as well as prevention of heart attacks for the demography under study.
 
 
 ## References

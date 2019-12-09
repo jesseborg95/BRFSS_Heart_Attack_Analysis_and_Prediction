@@ -1,7 +1,7 @@
 ---
 title: "DATS6101 Group Project: Predicting Heart Attacks - EDA Code"
 author: "Jonathan Giguere, Jesse Borg, Ese Emuraye, Sarah Gates"
-date: "December 11th 2019"
+date: "December 9th 2019"
 output:
   html_document
 
