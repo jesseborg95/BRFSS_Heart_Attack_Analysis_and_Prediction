@@ -889,6 +889,15 @@ Once all the models were carried out, a comparison was done between the models t
 
 The table below shows the results for different performance metrics when our models were evaluated using the test data from the previous section.
   
+However, before we delve into evaluating the model, we will briefly define the metrics for which our models will be evaluated. 
+
+1. Accuracy: This is the fraction of heart attack predictions our model got right
+
+2. Precision: This is the fraction of heart attack predictions that are actually correct, whether true or false. 
+
+3. Recall: This is the fraction of actual postives i.e. heart attack predictions identified correctly. It is also the sensitivity of the model
+
+4. F1 Score: This is a harmonic mean of precision and recall
   
   
 Metric                 | Logistic Regression | Classification Tree | Bagged Tree | Random Forest |
