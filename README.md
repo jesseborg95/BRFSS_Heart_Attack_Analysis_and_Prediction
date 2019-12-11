@@ -10,5 +10,4 @@ My group chose to analyze app store datasets found on the CDC Website (https://w
 ## Using the Files
 * The .RData files show the raw data used for the project.
 * The .Rmd file shows all of my group's code. This file can be downloaded and knitted to get the final output.
-* The .html file is the knitted R-Markdown file. Look at this if you are only interested in the output of the analysis. To view the rendered html file, go to http://htmlpreview.github.io/
-https://github.com/jesseborg95/BRFSS_Heart_Attack_Analysis_and_Prediction/blob/master/Group-Project-2-Summary--Part-III-.html
+* The .html file is the knitted R-Markdown file. Look at this if you are only interested in the output of the analysis. To view the rendered html file, go to http://htmlpreview.github.io/https://github.com/jesseborg95/BRFSS_Heart_Attack_Analysis_and_Prediction/blob/master/Group-Project-2-Summary--Part-III-.html
